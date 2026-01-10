@@ -1,0 +1,15 @@
+Package: rhydrogen
+Title: Minimal R Documentation Generator
+Version: 0.1.0
+Authors@R:
+    person("Troy", "Hernandez", email = "troy@cornball.ai", role = c("aut", "cre"))
+Description: A deterministic, dependency-light documentation generator for R
+    packages. Generates valid Rd files and NAMESPACE from roxygen2-style comments
+    using only base R. Supports a strict subset of tags with no markdown parsing,
+    no inference magic, and explicit-only behavior.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Suggests:
+    tinytest

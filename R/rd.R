@@ -1,0 +1,198 @@
+#' Generate Rd File Content
+#'
+#' @param tags Parsed tags from parse_tags().
+#' @param formals Character vector of formal argument names (for functions).
+#' @return Character string of Rd content.
+#' @keywords internal
+generate_rd <- function(tags, formals = NULL) {
+  lines <- character()
+
+  # Required sections
+  lines <- c(lines, paste0("\\name{", escape_rd(tags$name), "}"))
+  lines <- c(lines, paste0("\\alias{", escape_rd(tags$name), "}"))
+
+  # Additional aliases
+  for (alias in tags$aliases) {
+    if (alias != tags$name) {
+      lines <- c(lines, paste0("\\alias{", escape_rd(alias), "}"))
+    }
+  }
+
+  # Title (required)
+  title <- if (!is.null(tags$title)) tags$title else tags$name
+  lines <- c(lines, paste0("\\title{", escape_rd(title), "}"))
+
+  # Description (required)
+  desc <- if (!is.null(tags$description)) {
+    tags$description
+  } else if (!is.null(tags$title)) {
+    tags$title
+  } else {
+    tags$name
+
+  }
+  lines <- c(lines, paste0("\\description{", escape_rd(desc), "}"))
+
+  # Usage (for functions)
+  if (!is.null(formals)) {
+    usage <- paste0(tags$name, "(", paste(formals, collapse = ", "), ")")
+    lines <- c(lines, "\\usage{")
+    lines <- c(lines, escape_rd(usage))
+    lines <- c(lines, "}")
+  }
+
+  # Arguments (for functions with params)
+  if (length(tags$params) > 0) {
+    lines <- c(lines, "\\arguments{")
+    # Use formals order if available, otherwise param order
+    param_order <- if (!is.null(formals)) {
+      # Include documented params in formals order, then any extras
+      c(intersect(formals, names(tags$params)),
+        setdiff(names(tags$params), formals))
+    } else {
+      names(tags$params)
+    }
+    for (param in param_order) {
+      lines <- c(lines, paste0("  \\item{", escape_rd(param), "}{",
+                               escape_rd(tags$params[[param]]), "}"))
+    }
+    lines <- c(lines, "}")
+  }
+
+  # Details
+  if (!is.null(tags$details)) {
+    lines <- c(lines, "\\details{")
+    lines <- c(lines, escape_rd(tags$details))
+    lines <- c(lines, "}")
+  }
+
+  # Value/Return
+  if (!is.null(tags$return)) {
+    lines <- c(lines, "\\value{")
+    lines <- c(lines, escape_rd(tags$return))
+    lines <- c(lines, "}")
+  }
+
+  # References
+  if (!is.null(tags$references)) {
+    lines <- c(lines, "\\references{")
+    lines <- c(lines, escape_rd(tags$references))
+    lines <- c(lines, "}")
+  }
+
+  # See Also
+  if (!is.null(tags$seealso)) {
+    lines <- c(lines, "\\seealso{")
+    lines <- c(lines, escape_rd(tags$seealso))
+    lines <- c(lines, "}")
+  }
+
+  # Examples
+  if (!is.null(tags$examples) && nchar(trimws(tags$examples)) > 0) {
+    lines <- c(lines, "\\examples{")
+    # Examples are verbatim - don't escape
+    lines <- c(lines, tags$examples)
+    lines <- c(lines, "}")
+  }
+
+  # Keywords
+  for (kw in tags$keywords) {
+    lines <- c(lines, paste0("\\keyword{", escape_rd(kw), "}"))
+  }
+
+  paste(lines, collapse = "\n")
+}
+
+#' Escape Special Characters for Rd
+#'
+#' @param text Text to escape.
+#' @return Escaped text.
+#' @keywords internal
+escape_rd <- function(text) {
+  if (is.null(text)) return("")
+
+  # Escape in order: \ first, then { } %
+  text <- gsub("\\\\", "\\\\\\\\", text)
+  text <- gsub("\\{", "\\\\{", text)
+  text <- gsub("\\}", "\\\\}", text)
+  text <- gsub("%", "\\\\%", text)
+
+  text
+}
+
+#' Write Rd File
+#'
+#' @param content Rd content string.
+#' @param name Topic name.
+#' @param path Package root path.
+#' @keywords internal
+write_rd <- function(content, name, path = ".") {
+  man_dir <- file.path(path, "man")
+
+  if (!dir.exists(man_dir)) {
+    dir.create(man_dir, recursive = TRUE)
+  }
+
+  # Sanitize filename (replace . with - for internal functions)
+  filename <- gsub("^\\.", "dot-", name)
+  filepath <- file.path(man_dir, paste0(filename, ".Rd"))
+
+  writeLines(content, filepath, useBytes = TRUE)
+
+  filepath
+}
+
+#' Generate All Rd Files for a Package
+#'
+#' @param blocks List of documentation blocks from parse_package().
+#' @param path Package root path.
+#' @return Character vector of generated file paths.
+#' @keywords internal
+generate_all_rd <- function(blocks, path = ".") {
+  generated <- character()
+  topics_seen <- character()
+
+  for (block in blocks) {
+    # Parse tags
+    tags <- parse_tags(
+      block$lines,
+      block$object,
+      block$file,
+      block$line
+    )
+
+    # Skip if @noRd
+    if (tags$noRd) {
+      next
+    }
+
+    # Check for duplicate topics
+    if (tags$name %in% topics_seen) {
+      warning("Duplicate topic '", tags$name, "' - skipping",
+              call. = FALSE)
+      next
+    }
+    topics_seen <- c(topics_seen, tags$name)
+
+    # Generate Rd content
+    rd_content <- generate_rd(tags, block$formals)
+
+    # Write file
+    filepath <- write_rd(rd_content, tags$name, path)
+    generated <- c(generated, filepath)
+
+    # Warn about undocumented params
+    if (block$type == "function" && !is.null(block$formals)) {
+      undoc <- setdiff(block$formals, names(tags$params))
+      # Filter out ... which is often intentionally undocumented
+      undoc <- setdiff(undoc, "...")
+      if (length(undoc) > 0) {
+        warning("Undocumented parameters in ", tags$name, ": ",
+                paste(undoc, collapse = ", "),
+                call. = FALSE)
+      }
+    }
+  }
+
+  generated
+}
