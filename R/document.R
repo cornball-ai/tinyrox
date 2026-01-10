@@ -167,3 +167,111 @@ check <- function(path = ".") {
 
   invisible(all_ok)
 }
+
+#' Install Package
+#'
+#' Wrapper around R CMD INSTALL with quiet mode option.
+#'
+#' @param path Path to package root directory.
+#' @param quiet Logical. Suppress output except errors? Default TRUE.
+#'
+#' @return TRUE if successful, FALSE otherwise (invisibly).
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' install()
+#' install(quiet = FALSE)  # Show full output
+#' }
+install <- function(path = ".", quiet = TRUE) {
+  # Get absolute path
+  path <- normalizePath(path, mustWork = TRUE)
+
+  # Get package name from DESCRIPTION
+  desc_file <- file.path(path, "DESCRIPTION")
+  if (!file.exists(desc_file)) {
+    stop("No DESCRIPTION file found in ", path, call. = FALSE)
+  }
+
+  desc <- read.dcf(desc_file)
+  pkg_name <- desc[1, "Package"]
+
+  # Build command
+  cmd <- paste("R CMD INSTALL", shQuote(path))
+
+  # Run install (redirect output if quiet)
+  if (quiet) {
+    # Redirect both stdout and stderr
+    if (.Platform$OS.type == "windows") {
+      cmd_quiet <- paste(cmd, "> NUL 2>&1")
+    } else {
+      cmd_quiet <- paste(cmd, "> /dev/null 2>&1")
+    }
+    result <- system(cmd_quiet)
+  } else {
+    result <- system(cmd)
+  }
+
+  if (result == 0) {
+    message("Installed ", pkg_name)
+    invisible(TRUE)
+  } else {
+    message("Install failed for ", pkg_name)
+    invisible(FALSE)
+  }
+}
+
+#' Load All Package Code
+#'
+#' Sources all R files in a package for interactive development,
+#' without requiring a full install.
+#'
+#' @param path Path to package root directory.
+#' @param quiet Logical. Suppress file sourcing messages? Default TRUE.
+#'
+#' @return Character vector of sourced files (invisibly).
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' load_all()
+#' load_all(quiet = FALSE)  # Show each file being sourced
+#' }
+load_all <- function(path = ".", quiet = TRUE) {
+  r_dir <- file.path(path, "R")
+
+  if (!dir.exists(r_dir)) {
+    stop("No R/ directory found in ", path, call. = FALSE)
+  }
+
+  r_files <- list.files(r_dir, pattern = "\\.[Rr]$", full.names = TRUE)
+
+  if (length(r_files) == 0) {
+    message("No R files found.")
+    return(invisible(character()))
+  }
+
+  # Create a new environment attached to the search path
+  pkg_env <- new.env(parent = globalenv())
+
+  for (f in r_files) {
+    if (!quiet) message("Sourcing ", basename(f))
+    source(f, local = pkg_env)
+  }
+
+  # Attach the environment
+  # Use a name that won't conflict
+  env_name <- paste0("rhydrogen:", basename(normalizePath(path)))
+
+  # Detach if already attached
+  if (env_name %in% search()) {
+    detach(env_name, character.only = TRUE)
+  }
+
+  attach(pkg_env, name = env_name)
+
+  message("Loaded ", length(r_files), " file(s) as '", env_name, "'")
+  invisible(r_files)
+}

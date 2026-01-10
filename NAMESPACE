@@ -3,3 +3,5 @@
 export(check)
 export(clean)
 export(document)
+export(install)
+export(load_all)
