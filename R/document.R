@@ -275,3 +275,74 @@ load_all <- function(path = ".", quiet = TRUE) {
   message("Loaded ", length(r_files), " file(s) as '", env_name, "'")
   invisible(r_files)
 }
+
+#' Reload an Installed Package
+#'
+#' Unloads a package if loaded, reinstalls it, and loads it again.
+#' Convenience function for the document-install-reload cycle during development.
+#'
+#' @param path Path to package root directory.
+#' @param document If TRUE (default), run document() before installing.
+#' @param quiet Logical. Suppress install output? Default TRUE.
+#'
+#' @return TRUE if successful (invisibly).
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' reload()  # Document, install, and reload current package
+#' reload(document = FALSE)  # Just reinstall and reload
+#' }
+reload <- function(path = ".", document = TRUE, quiet = TRUE) {
+  # Get package name from DESCRIPTION
+  desc_file <- file.path(path, "DESCRIPTION")
+  if (!file.exists(desc_file)) {
+    stop("No DESCRIPTION file found in ", path, ". Is this an R package?", call. = FALSE)
+  }
+
+  desc <- read.dcf(desc_file)
+  pkg_name <- desc[1, "Package"]
+
+  # Document first if requested
+  if (document) {
+    document(path)
+  }
+
+  # Unload package if loaded
+  pkg_loaded <- paste0("package:", pkg_name)
+  if (pkg_loaded %in% search()) {
+    tryCatch({
+      detach(pkg_loaded, unload = TRUE, character.only = TRUE)
+      message("Unloaded ", pkg_name)
+    }, error = function(e) {
+      # Sometimes unload fails due to dependencies, just detach
+      tryCatch({
+        detach(pkg_loaded, character.only = TRUE)
+        message("Detached ", pkg_name, " (could not fully unload)")
+      }, error = function(e2) {
+        message("Note: Could not detach ", pkg_name, ": ", e2$message)
+      })
+    })
+  }
+
+  # Also unload namespace if still loaded
+  if (pkg_name %in% loadedNamespaces()) {
+    tryCatch({
+      unloadNamespace(pkg_name)
+    }, error = function(e) {
+      # Ignore - will be handled by library() reload
+    })
+  }
+
+  # Reinstall
+  success <- install(path, quiet = quiet)
+
+  if (success) {
+    # Reload
+    library(pkg_name, character.only = TRUE)
+    message("Reloaded ", pkg_name)
+  }
+
+  invisible(success)
+}

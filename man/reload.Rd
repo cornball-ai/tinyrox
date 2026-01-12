@@ -1,0 +1,21 @@
+\name{reload}
+\alias{reload}
+\title{Reload an Installed Package}
+\description{Unloads a package if loaded, reinstalls it, and loads it again. Convenience function for the document-install-reload cycle during development.}
+\usage{
+reload(path, document, quiet)
+}
+\arguments{
+  \item{path}{Path to package root directory.}
+  \item{document}{If TRUE (default), run document() before installing.}
+  \item{quiet}{Logical. Suppress install output? Default TRUE.}
+}
+\value{
+TRUE if successful (invisibly).
+}
+\examples{
+\dontrun{
+reload()  # Document, install, and reload current package
+reload(document = FALSE)  # Just reinstall and reload
+}
+}
