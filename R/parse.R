@@ -115,6 +115,17 @@ parse_file <- function(file) {
 #' @return A list with name, type, and formals, or NULL if not a definition.
 #' @keywords internal
 parse_object_definition <- function(text, file, line_num) {
+  # Check for "_PACKAGE" directive (package documentation)
+  # Only check first line (text may be multi-line)
+  first_line <- strsplit(text, "\n")[[1]][1]
+  if (grepl('^"_PACKAGE"$', trimws(first_line))) {
+    return(list(
+      name = "_PACKAGE",
+      type = "package",
+      formals = NULL
+    ))
+  }
+
   # Match: name <- or name =
   # Handles: foo <- function(...), foo <- value, foo = function(...)
 
@@ -141,6 +152,17 @@ parse_object_definition <- function(text, file, line_num) {
     return(list(
       name = name,
       type = "function",
+      formals = formals_list
+    ))
+  }
+
+  # Check if it's a torch nn_module (extract formals from initialize method)
+  if (grepl("^(torch::)?nn_module\\s*\\(", rest)) {
+    formals_list <- extract_nn_module_formals(rest)
+
+    return(list(
+      name = name,
+      type = "nn_module",
       formals = formals_list
     ))
   }
@@ -191,6 +213,32 @@ extract_formals <- function(code) {
   # Parse the arguments
   # Split by comma, but be careful of defaults with commas
   parse_formals_text(args_text)
+}
+
+#' Extract Formals from torch nn_module
+#'
+#' Extracts the formals from the initialize method of an nn_module definition.
+#'
+#' @param code Code starting with "nn_module(" or "torch::nn_module("
+#' @return List with 'names' (argument names) and 'usage' (formatted for Rd),
+#'   or NULL if initialize method not found.
+#' @keywords internal
+extract_nn_module_formals <- function(code) {
+  # Find initialize = function(...) pattern
+  # Can be on same line or subsequent lines
+  init_pattern <- "initialize\\s*=\\s*function\\s*\\("
+  init_match <- regexpr(init_pattern, code)
+
+  if (init_match == -1) {
+    return(NULL)
+  }
+
+  # Extract from "function(" onwards
+  init_start <- init_match + attr(init_match, "match.length") - 1
+  rest <- substr(code, init_start, nchar(code))
+
+  # Now extract formals like a regular function
+  extract_formals(rest)
 }
 
 #' Parse Formals Text

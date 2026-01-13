@@ -17,7 +17,9 @@ SUPPORTED_DOC_TAGS <- c(
   "family",
   "name",
   "noRd",
-  "inheritParams"
+  "inheritParams",
+  "section",
+  "author"
 )
 
 #' Supported Namespace Tags
@@ -64,7 +66,9 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
     imports = list(),
     importFroms = list(),
     useDynLib = NULL,
-    inheritParams = character()
+    inheritParams = character(),
+    sections = list(),
+    author = NULL
   )
 
   if (length(lines) == 0) {
@@ -245,6 +249,26 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
       # Store the source function name for potential future use
       # Currently just parsed and stored, not processed
       result$inheritParams <- c(result$inheritParams, value)
+    },
+    "section" = {
+      # @section Title: content
+      # arg contains "Title:" and accumulator contains the content
+      # Don't use 'value' here since it combines arg + accumulator
+      if (!is.null(arg) && grepl(":$", arg)) {
+        sec_title <- sub(":$", "", arg)
+        sec_content <- if (length(accumulator) > 0) {
+          paste(accumulator, collapse = "\n")
+        } else {
+          ""
+        }
+        result$sections <- c(result$sections, list(list(
+          title = sec_title,
+          content = sec_content
+        )))
+      }
+    },
+    "author" = {
+      result$author <- value
     }
   )
 
