@@ -44,13 +44,13 @@ expect_false(grepl("export\\(internal_fn\\)", ns))
 # Check importFrom
 expect_true(grepl("importFrom\\(stats,lm\\)", ns))
 
-# Test S3 method
+# Test S3 method with explicit @exportS3Method
 blocks_s3 <- list(
   list(
-    lines = c("Print method", "@export", "@exportS3Method print myclass"),
+    lines = c("Print method", "@exportS3Method print myclass"),
     object = "print.myclass",
     type = "function",
-    formals = c("x", "..."),
+    formals = list(names = c("x", "..."), usage = c("x", "...")),
     file = "test.R",
     line = 1
   )
@@ -58,4 +58,20 @@ blocks_s3 <- list(
 
 ns_s3 <- rhydrogen:::generate_namespace(blocks_s3)
 expect_true(grepl("S3method\\(print,myclass\\)", ns_s3))
-expect_true(grepl("export\\(print.myclass\\)", ns_s3))
+
+# Test S3 method auto-detection from @export + function name pattern
+blocks_s3_auto <- list(
+  list(
+    lines = c("Print method", "@export"),
+    object = "print.myclass",
+    type = "function",
+    formals = list(names = c("x", "..."), usage = c("x", "...")),
+    file = "test.R",
+    line = 1
+  )
+)
+
+ns_s3_auto <- rhydrogen:::generate_namespace(blocks_s3_auto)
+# Should auto-detect as S3 method, not regular export
+expect_true(grepl("S3method\\(print,myclass\\)", ns_s3_auto))
+expect_false(grepl("export\\(print.myclass\\)", ns_s3_auto))

@@ -23,13 +23,15 @@ tags <- list(
   noRd = FALSE
 )
 
-rd <- rhydrogen:::generate_rd(tags, c("x", "y"))
+rd <- rhydrogen:::generate_rd(tags, list(names = c("x", "y"), usage = c("x", "y")))
 
 # Check required sections
 expect_true(grepl("\\\\name\\{add\\}", rd))
 expect_true(grepl("\\\\alias\\{add\\}", rd))
 expect_true(grepl("\\\\title\\{Add Numbers\\}", rd))
-expect_true(grepl("\\\\description\\{Adds two numbers together\\}", rd))
+# Description is now on separate line from opening brace
+expect_true(grepl("\\\\description\\{", rd))
+expect_true(grepl("Adds two numbers together", rd))
 
 # Check optional sections
 expect_true(grepl("\\\\arguments\\{", rd))
@@ -46,13 +48,13 @@ expect_true(grepl("add\\(x, y\\)", rd))
 # Test with aliases
 tags_alias <- tags
 tags_alias$aliases <- c("plus", "sum2")
-rd_alias <- rhydrogen:::generate_rd(tags_alias, c("x", "y"))
+rd_alias <- rhydrogen:::generate_rd(tags_alias, list(names = c("x", "y"), usage = c("x", "y")))
 expect_true(grepl("\\\\alias\\{plus\\}", rd_alias))
 expect_true(grepl("\\\\alias\\{sum2\\}", rd_alias))
 
 # Test with keywords
 tags_kw <- tags
 tags_kw$keywords <- c("internal", "math")
-rd_kw <- rhydrogen:::generate_rd(tags_kw, c("x", "y"))
+rd_kw <- rhydrogen:::generate_rd(tags_kw, list(names = c("x", "y"), usage = c("x", "y")))
 expect_true(grepl("\\\\keyword\\{internal\\}", rd_kw))
 expect_true(grepl("\\\\keyword\\{math\\}", rd_kw))

@@ -25,14 +25,23 @@ expect_equal(length(blocks), 2)
 # Test first block
 expect_equal(blocks[[1]]$object, "add")
 expect_equal(blocks[[1]]$type, "function")
-expect_equal(blocks[[1]]$formals, c("x", "y"))
+expect_equal(blocks[[1]]$formals$names, c("x", "y"))
+expect_equal(blocks[[1]]$formals$usage, c("x", "y"))
 
 # Test second block
 expect_equal(blocks[[2]]$object, ".helper")
 expect_equal(blocks[[2]]$type, "function")
 
-# Test parse_formals_text
-expect_equal(rhydrogen:::parse_formals_text("x, y"), c("x", "y"))
-expect_equal(rhydrogen:::parse_formals_text("x, y = 1"), c("x", "y"))
-expect_equal(rhydrogen:::parse_formals_text(""), character())
-expect_equal(rhydrogen:::parse_formals_text("..."), "...")
+# Test parse_formals_text - returns list with names and usage
+result <- rhydrogen:::parse_formals_text("x, y")
+expect_equal(result$names, c("x", "y"))
+expect_equal(result$usage, c("x", "y"))
+
+result <- rhydrogen:::parse_formals_text("x, y = 1")
+expect_equal(result$names, c("x", "y"))
+expect_equal(result$usage, c("x", "y = 1"))
+
+result <- rhydrogen:::parse_formals_text("")
+expect_equal(result$names, character())
+
+expect_equal(rhydrogen:::parse_formals_text("...")$names, "...")

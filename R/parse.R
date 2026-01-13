@@ -249,7 +249,7 @@ parse_formals_text <- function(text) {
     }
   }, character(1))
 
-  list(names = arg_names, usage = usage)
+  list(names = arg_names, usage = unname(usage))
 }
 
 #' Parse All R Files in a Package
