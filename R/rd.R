@@ -30,20 +30,9 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL) {
   title <- if (!is.null(tags$title)) tags$title else tags$name
   lines <- c(lines, paste0("\\title{", escape_rd(title), "}"))
 
-  # Description (required)
-  desc <- if (!is.null(tags$description)) {
-    tags$description
-  } else if (!is.null(tags$title)) {
-    tags$title
-  } else {
-    tags$name
-
-  }
-  lines <- c(lines, paste0("\\description{", escape_rd(desc), "}"))
-
-  # Usage (for functions)
-  if (!is.null(formals) && length(formals$names) > 0) {
-    # Use formals$usage which includes defaults
+  # Usage (for functions) - before arguments like roxygen2
+  # Generate usage even for no-arg functions (formals is list with empty names)
+  if (!is.null(formals)) {
     usage <- format_usage(tags$name, formals$usage)
     lines <- c(lines, "\\usage{")
     lines <- c(lines, escape_rd(usage))
@@ -56,15 +45,20 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL) {
     # Use formals order if available, otherwise param order
     formal_names <- if (!is.null(formals)) formals$names else character()
     param_order <- if (length(formal_names) > 0) {
-      # Include documented params in formals order, then any extras
       c(intersect(formal_names, names(tags$params)),
         setdiff(names(tags$params), formal_names))
     } else {
       names(tags$params)
     }
-    for (param in param_order) {
-      lines <- c(lines, paste0("  \\item{", escape_rd(param), "}{",
-                               escape_rd(tags$params[[param]]), "}"))
+    for (i in seq_along(param_order)) {
+      param <- param_order[i]
+      # Wrap long descriptions at ~72 chars
+      desc_text <- wrap_text(escape_rd(tags$params[[param]]), width = 72)
+      lines <- c(lines, paste0("\\item{", escape_rd(param), "}{", desc_text, "}"))
+      # Add blank line between items (except after last)
+      if (i < length(param_order)) {
+        lines <- c(lines, "")
+      }
     }
     lines <- c(lines, "}")
   }
@@ -82,6 +76,18 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL) {
     lines <- c(lines, escape_rd(tags$return))
     lines <- c(lines, "}")
   }
+
+  # Description - after value like roxygen2
+  desc <- if (!is.null(tags$description)) {
+    tags$description
+  } else if (!is.null(tags$title)) {
+    tags$title
+  } else {
+    tags$name
+  }
+  lines <- c(lines, "\\description{")
+  lines <- c(lines, wrap_text(escape_rd(desc), width = 72))
+  lines <- c(lines, "}")
 
   # References
   if (!is.null(tags$references)) {
@@ -115,13 +121,24 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL) {
 
 #' Escape Special Characters for Rd
 #'
+#' Escapes special characters for Rd format, but detects and preserves
+#' existing Rd markup (like \\describe{}, \\item{}, \\code{}, etc.).
+#'
 #' @param text Text to escape.
 #' @return Escaped text.
 #' @keywords internal
 escape_rd <- function(text) {
   if (is.null(text)) return("")
 
-  # Escape in order: \ first, then { } %
+  # Check if text contains Rd markup (backslash commands like \describe, \item, etc.)
+  # If so, pass through with minimal escaping (just %)
+  if (grepl("\\\\[a-zA-Z]+\\{", text)) {
+    # Contains Rd markup - only escape %
+    text <- gsub("%", "\\\\%", text)
+    return(text)
+  }
+
+  # No Rd markup - escape all special chars
   text <- gsub("\\\\", "\\\\\\\\", text)
   text <- gsub("\\{", "\\\\{", text)
   text <- gsub("\\}", "\\\\}", text)
@@ -161,6 +178,41 @@ format_usage <- function(name, args) {
   }
 
   lines <- c(lines, ")")
+  paste(lines, collapse = "\n")
+}
+
+#' Wrap Text to Width
+#'
+#' Wraps text to specified width, preserving words.
+#'
+#' @param text Text to wrap.
+#' @param width Maximum line width.
+#' @return Wrapped text with newlines.
+#' @keywords internal
+wrap_text <- function(text, width = 72) {
+  if (is.null(text) || nchar(text) <= width) {
+    return(text)
+  }
+
+  # Split into words
+
+  words <- strsplit(text, "\\s+")[[1]]
+  if (length(words) == 0) return(text)
+
+  lines <- character()
+  current_line <- words[1]
+
+  for (word in words[-1]) {
+    test_line <- paste(current_line, word)
+    if (nchar(test_line) <= width) {
+      current_line <- test_line
+    } else {
+      lines <- c(lines, current_line)
+      current_line <- word
+    }
+  }
+  lines <- c(lines, current_line)
+
   paste(lines, collapse = "\n")
 }
 

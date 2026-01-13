@@ -3,13 +3,16 @@
 \name{clean}
 \alias{clean}
 \title{Clean Generated Files}
-\description{Removes all Rd files from man/ directory.}
 \usage{
 clean(path = ".", namespace = FALSE)
 }
 \arguments{
-  \item{path}{Path to package root directory.}
-  \item{namespace}{Also remove NAMESPACE? Default FALSE.}
+\item{path}{Path to package root directory.}
+
+\item{namespace}{Also remove NAMESPACE? Default FALSE.}
+}
+\description{
+Removes all Rd files from man/ directory.
 }
 \examples{
 \dontrun{

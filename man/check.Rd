@@ -3,15 +3,17 @@
 \name{check}
 \alias{check}
 \title{Check Package Documentation}
-\description{Validates that Rd files and NAMESPACE are syntactically correct.}
 \usage{
 check(path = ".")
 }
 \arguments{
-  \item{path}{Path to package root directory.}
+\item{path}{Path to package root directory.}
 }
 \value{
 TRUE if all checks pass, FALSE otherwise.
+}
+\description{
+Validates that Rd files and NAMESPACE are syntactically correct.
 }
 \examples{
 \dontrun{

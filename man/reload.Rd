@@ -3,17 +3,23 @@
 \name{reload}
 \alias{reload}
 \title{Reload an Installed Package}
-\description{Unloads a package if loaded, reinstalls it, and loads it again. Convenience function for the document-install-reload cycle during development.}
 \usage{
 reload(path = ".", document = TRUE, quiet = TRUE)
 }
 \arguments{
-  \item{path}{Path to package root directory.}
-  \item{document}{If TRUE (default), run document() before installing.}
-  \item{quiet}{Logical. Suppress install output? Default TRUE.}
+\item{path}{Path to package root directory.}
+
+\item{document}{If TRUE (default), run document() before installing.}
+
+\item{quiet}{Logical. Suppress install output? Default TRUE.}
 }
 \value{
 TRUE if successful (invisibly).
+}
+\description{
+Unloads a package if loaded, reinstalls it, and loads it again.
+Convenience function for the document-install-reload cycle during
+development.
 }
 \examples{
 \dontrun{

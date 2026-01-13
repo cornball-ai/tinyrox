@@ -3,5 +3,7 @@
 \name{KNOWN_S3_GENERICS}
 \alias{KNOWN_S3_GENERICS}
 \title{Known S3 Generic Functions}
-\description{List of base R S3 generics for auto-detection when @export is used.}
+\description{
+List of base R S3 generics for auto-detection when @export is used.
+}
 \keyword{internal}

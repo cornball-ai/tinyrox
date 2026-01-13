@@ -3,14 +3,17 @@
 \name{detect_s3_method}
 \alias{detect_s3_method}
 \title{Detect S3 Method from Function Name}
-\description{Checks if a function name follows the generic.class pattern where generic is a known S3 generic function.}
 \usage{
 detect_s3_method(name)
 }
 \arguments{
-  \item{name}{Function name to check.}
+\item{name}{Function name to check.}
 }
 \value{
 List with generic and class components, or NULL if not an S3 method.
+}
+\description{
+Checks if a function name follows the generic.class pattern where
+generic is a known S3 generic function.
 }
 \keyword{internal}
