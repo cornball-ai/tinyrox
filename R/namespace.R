@@ -1,3 +1,43 @@
+#' Known S3 Generic Functions
+#'
+#' List of base R S3 generics for auto-detection when @export is used.
+#' @keywords internal
+KNOWN_S3_GENERICS <- c(
+  # Print/display
+  "print", "format", "summary", "str",
+  # Coercion
+  "as.character", "as.data.frame", "as.list", "as.matrix", "as.vector",
+  "as.numeric", "as.integer", "as.logical", "as.double", "as.complex",
+  "as.Date", "as.POSIXct", "as.POSIXlt", "as.factor",
+  # Type checking
+  "is.na", "is.null", "is.finite", "is.infinite", "is.nan",
+  # Subsetting
+  "[", "[[", "$", "[<-", "[[<-", "$<-",
+  # Math/ops
+  "mean", "median", "quantile", "range", "sum", "prod", "min", "max",
+  "Math", "Ops", "Summary", "Complex",
+  # Dimensions
+  "length", "dim", "nrow", "ncol", "names", "dimnames", "row.names",
+  "length<-", "dim<-", "names<-", "dimnames<-", "row.names<-",
+  # Model methods
+  "coef", "fitted", "residuals", "predict", "simulate", "update",
+  "vcov", "confint", "logLik", "AIC", "BIC", "nobs", "df.residual",
+  "deviance", "extractAIC", "model.frame", "model.matrix",
+  "anova", "effects", "weights", "variable.names", "case.names",
+  # Plot
+  "plot", "lines", "points", "text", "image", "contour", "persp",
+  "pairs", "hist", "barplot", "boxplot", "dotchart",
+  # Other common
+  "c", "t", "rep", "rev", "sort", "unique", "duplicated", "anyDuplicated",
+  "merge", "split", "cut", "cbind", "rbind", "stack", "unstack",
+  "head", "tail", "within", "transform", "subset", "aggregate",
+  "droplevels", "xtfrm", "labels", "levels", "levels<-",
+  # Connection/IO
+  "open", "close", "flush", "read", "write", "seek", "truncate",
+  # Misc
+  "all.equal", "Negate"
+)
+
 #' Generate NAMESPACE Content
 #'
 #' @param blocks List of documentation blocks from parse_package().
@@ -18,12 +58,19 @@ generate_namespace <- function(blocks) {
       block$line
     )
 
-    # Exports
+    # Check for S3 method pattern in exports
     if (tags$export) {
-      exports <- c(exports, block$object)
+      s3_info <- detect_s3_method(block$object)
+      if (!is.null(s3_info)) {
+        # It's an S3 method - add to s3methods instead of exports
+        s3methods <- c(s3methods, list(s3_info))
+      } else {
+        # Regular export
+        exports <- c(exports, block$object)
+      }
     }
 
-    # S3 methods
+    # Explicit S3 methods via @exportS3Method
     if (!is.null(tags$exportS3Method)) {
       s3m <- tags$exportS3Method
       if (!is.null(s3m$generic) && !is.null(s3m$class)) {
@@ -180,4 +227,34 @@ write_namespace <- function(content, path = ".", mode = "overwrite") {
   }
 
   filepath
+}
+
+#' Detect S3 Method from Function Name
+#'
+#' Checks if a function name follows the generic.class pattern where
+#' generic is a known S3 generic function.
+#'
+#' @param name Function name to check.
+#' @return List with generic and class components, or NULL if not an S3 method.
+#' @keywords internal
+detect_s3_method <- function(name) {
+  # Must contain a dot
+  if (!grepl("\\.", name)) {
+    return(NULL)
+  }
+
+  # Try progressively longer generic names
+  # e.g., for "as.data.frame.foo", try "as", "as.data", "as.data.frame"
+  parts <- strsplit(name, "\\.")[[1]]
+
+  for (i in seq_len(length(parts) - 1)) {
+    generic <- paste(parts[1:i], collapse = ".")
+    class <- paste(parts[(i + 1):length(parts)], collapse = ".")
+
+    if (generic %in% KNOWN_S3_GENERICS) {
+      return(list(generic = generic, class = class))
+    }
+  }
+
+  NULL
 }

@@ -2,8 +2,7 @@
 #'
 #' @keywords internal
 SUPPORTED_DOC_TAGS <- c(
-
-"title",
+  "title",
   "description",
   "details",
   "param",
@@ -17,7 +16,8 @@ SUPPORTED_DOC_TAGS <- c(
   "keywords",
   "family",
   "name",
-  "noRd"
+  "noRd",
+  "inheritParams"
 )
 
 #' Supported Namespace Tags
@@ -63,7 +63,8 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
     exportS3Method = NULL,
     imports = list(),
     importFroms = list(),
-    useDynLib = NULL
+    useDynLib = NULL,
+    inheritParams = character()
   )
 
   if (length(lines) == 0) {
@@ -239,6 +240,11 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
     },
     "useDynLib" = {
       result$useDynLib <- value
+    },
+    "inheritParams" = {
+      # Store the source function name for potential future use
+      # Currently just parsed and stored, not processed
+      result$inheritParams <- c(result$inheritParams, value)
     }
   )
 
