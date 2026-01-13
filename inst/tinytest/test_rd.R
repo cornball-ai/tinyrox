@@ -58,3 +58,32 @@ tags_kw$keywords <- c("internal", "math")
 rd_kw <- rhydrogen:::generate_rd(tags_kw, list(names = c("x", "y"), usage = c("x", "y")))
 expect_true(grepl("\\\\keyword\\{internal\\}", rd_kw))
 expect_true(grepl("\\\\keyword\\{math\\}", rd_kw))
+
+# Test resolve_inherit_params
+source_tags <- list(
+  name = "base_func",
+  params = list(
+    x = "The x parameter",
+    y = "The y parameter",
+    z = "The z parameter"
+  )
+)
+
+child_tags <- list(
+  name = "child_func",
+  params = list(y = "Overridden y param"),  # Already documented
+
+  inheritParams = c("base_func")
+)
+
+all_tags <- list(base_func = source_tags, child_func = child_tags)
+formals <- list(names = c("x", "y"), usage = c("x", "y"))  # Only has x and y
+
+resolved <- rhydrogen:::resolve_inherit_params(child_tags, all_tags, formals)
+
+# Should inherit x (in formals, not documented)
+expect_equal(resolved$params$x, "The x parameter")
+# Should NOT override y (already documented)
+expect_equal(resolved$params$y, "Overridden y param")
+# Should NOT inherit z (not in formals)
+expect_true(is.null(resolved$params$z))

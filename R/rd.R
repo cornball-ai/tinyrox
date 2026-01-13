@@ -248,8 +248,11 @@ generate_all_rd <- function(blocks, path = ".") {
   generated <- character()
   topics_seen <- character()
 
+  # First pass: parse all blocks and build lookup for @inheritParams
+  all_tags <- list()
+  all_blocks <- list()
+
   for (block in blocks) {
-    # Parse tags
     tags <- parse_tags(
       block$lines,
       block$object,
@@ -257,8 +260,22 @@ generate_all_rd <- function(blocks, path = ".") {
       block$line
     )
 
-    # Skip if @noRd or namespace-only block
-    if (tags$noRd || block$type == "namespace_only") {
+    # Skip namespace-only blocks
+    if (block$type == "namespace_only") {
+      next
+    }
+
+    all_tags[[tags$name]] <- tags
+    all_blocks[[tags$name]] <- block
+  }
+
+  # Second pass: resolve @inheritParams and generate Rd files
+  for (name in names(all_tags)) {
+    tags <- all_tags[[name]]
+    block <- all_blocks[[name]]
+
+    # Skip if @noRd
+    if (tags$noRd) {
       next
     }
 
@@ -269,6 +286,11 @@ generate_all_rd <- function(blocks, path = ".") {
       next
     }
     topics_seen <- c(topics_seen, tags$name)
+
+    # Resolve @inheritParams
+    if (length(tags$inheritParams) > 0) {
+      tags <- resolve_inherit_params(tags, all_tags, block$formals)
+    }
 
     # Generate Rd content
     rd_content <- generate_rd(tags, block$formals, block$file)
@@ -292,4 +314,57 @@ generate_all_rd <- function(blocks, path = ".") {
   }
 
   generated
+}
+
+#' Resolve @inheritParams Tags
+#'
+#' Copies parameter documentation from source functions to the current function.
+#' Only inherits params that are: (1) in the current function's formals, and
+#' (2) not already documented in the current function.
+#'
+#' @param tags Current function's parsed tags.
+#' @param all_tags Named list of all parsed tags (name -> tags).
+#' @param formals Current function's formals (list with names and usage).
+#' @return Updated tags with inherited params merged in.
+#' @keywords internal
+resolve_inherit_params <- function(tags, all_tags, formals) {
+  # Get the current function's formal parameter names
+
+  formal_names <- if (!is.null(formals)) formals$names else character()
+
+  for (source_name in tags$inheritParams) {
+    # Handle pkg::function syntax
+    if (grepl("::", source_name)) {
+      # External package - skip for now (would need to load package)
+      # TODO: Support external packages
+      next
+    }
+
+    # Look up source function's tags
+    source_tags <- all_tags[[source_name]]
+
+    if (is.null(source_tags)) {
+      warning("@inheritParams: source function '", source_name,
+              "' not found in package", call. = FALSE)
+      next
+    }
+
+    # Copy params that are in our formals and not already documented
+    for (param_name in names(source_tags$params)) {
+      # Only inherit if param is in our formals
+      if (!param_name %in% formal_names) {
+        next
+      }
+
+      # Only inherit if not already documented
+      if (param_name %in% names(tags$params)) {
+        next
+      }
+
+      # Inherit the param
+      tags$params[[param_name]] <- source_tags$params[[param_name]]
+    }
+  }
+
+  tags
 }
