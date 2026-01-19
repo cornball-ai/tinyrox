@@ -9,5 +9,7 @@ Description: A deterministic, dependency-light documentation generator for R
     no inference magic, and explicit-only behavior.
 License: GPL-3
 Encoding: UTF-8
+Imports:
+    curl
 Suggests:
     tinytest
