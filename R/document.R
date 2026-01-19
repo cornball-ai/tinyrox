@@ -108,7 +108,7 @@ clean <- function(path = ".", namespace = FALSE) {
 #'
 #' @param path Path to package root directory.
 #' @param args Character vector of additional arguments to pass to R CMD check.
-#'   Default includes "--no-manual" to skip PDF manual building.
+#'   Default includes "--as-cran" and "--no-manual".
 #' @param error_on Severity level that causes an error: "error", "warning", or
 #'   "note". Default is "warning" (fails on errors or warnings).
 #'
@@ -123,7 +123,7 @@ clean <- function(path = ".", namespace = FALSE) {
 #' check(error_on = "error")  # Only fail on errors, not warnings
 #' check(args = c("--as-cran", "--no-manual"))
 #' }
-check <- function(path = ".", args = "--no-manual",
+check <- function(path = ".", args = c("--as-cran", "--no-manual"),
                   error_on = c("warning", "error", "note")) {
   error_on <- match.arg(error_on)
 
@@ -176,10 +176,10 @@ check <- function(path = ".", args = "--no-manual",
   if (file.exists(log_file)) {
     log <- readLines(log_file, warn = FALSE)
 
-    # Count issues
-    errors <- sum(grepl("^ERROR", log))
-    warnings <- sum(grepl("^WARNING", log))
-    notes <- sum(grepl("^NOTE", log))
+    # Count issues (format: "* checking ... NOTE" or "ERROR: ...")
+    errors <- sum(grepl("\\.\\.\\. ERROR$|^ERROR:", log))
+    warnings <- sum(grepl("\\.\\.\\. WARNING$|^WARNING:", log))
+    notes <- sum(grepl("\\.\\.\\. NOTE$|^NOTE:", log))
 
     # Print summary
     message("\n", pkg_name, " ", pkg_version, ": ",

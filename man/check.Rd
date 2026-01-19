@@ -6,7 +6,7 @@
 \usage{
 check(
   path = ".",
-  args = "--no-manual",
+  args = c("--as-cran", "--no-manual"),
   error_on = c("warning", "error", "note")
 )
 }
@@ -14,7 +14,7 @@ check(
 \item{path}{Path to package root directory.}
 
 \item{args}{Character vector of additional arguments to pass to R CMD check. Default
-includes "--no-manual" to skip PDF manual building.}
+includes "--as-cran" and "--no-manual".}
 
 \item{error_on}{Severity level that causes an error: "error", "warning", or "note".
 Default is "warning" (fails on errors or warnings).}
