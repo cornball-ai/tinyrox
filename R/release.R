@@ -2,7 +2,7 @@
 #'
 #' Functions for submitting packages to CRAN and testing on Windows.
 #'
-#' @importFrom curl curl_upload curl_fetch_memory new_handle form_file
+#' @importFrom curl curl_upload curl_fetch_memory new_handle handle_setform form_file
 NULL
 
 #' Build Package Tarball
@@ -243,24 +243,17 @@ submit_cran <- function(path = ".", comments = "cran-comments.md") {
 
   message("Uploading to CRAN...")
 
-  # Create multipart form
-  form_data <- list(
-    name = maint$name,
-    email = maint$email,
-    uploaded_file = curl::form_file(tarball, type = "application/x-gzip"),
-    comment = comment_text,
-    upload = "Upload package"
-  )
-
   # Submit
   response <- tryCatch({
-    curl::curl_fetch_memory(
-      cran_url,
-      handle = curl::new_handle(
-        post = TRUE,
-        httppost = form_data
-      )
+    h <- curl::new_handle()
+    curl::handle_setform(h,
+      name = maint$name,
+      email = maint$email,
+      uploaded_file = curl::form_file(tarball, type = "application/x-gzip"),
+      comment = comment_text,
+      upload = "Upload package"
     )
+    curl::curl_fetch_memory(cran_url, handle = h)
   }, error = function(e) {
     stop("Upload failed: ", e$message, call. = FALSE)
   })
@@ -278,21 +271,15 @@ submit_cran <- function(path = ".", comments = "cran-comments.md") {
       pkg_id <- id_match[2]
 
       # Submit confirmation
-      confirm_data <- list(
+      h2 <- curl::new_handle()
+      curl::handle_setform(h2,
         pkg_id = pkg_id,
         name = maint$name,
         email = maint$email,
         policy_check = "1",
         submit = "Submit package"
       )
-
-      confirm_response <- curl::curl_fetch_memory(
-        cran_url,
-        handle = curl::new_handle(
-          post = TRUE,
-          httppost = confirm_data
-        )
-      )
+      confirm_response <- curl::curl_fetch_memory(cran_url, handle = h2)
 
       if (confirm_response$status_code == 200) {
         message("\nSubmission uploaded successfully.")
