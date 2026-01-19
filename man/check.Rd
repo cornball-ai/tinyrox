@@ -2,21 +2,34 @@
 % Please edit documentation in R/document.R
 \name{check}
 \alias{check}
-\title{Check Package Documentation}
+\title{Check Package}
 \usage{
-check(path = ".")
+check(
+  path = ".",
+  args = "--no-manual",
+  error_on = c("warning", "error", "note")
+)
 }
 \arguments{
 \item{path}{Path to package root directory.}
+
+\item{args}{Character vector of additional arguments to pass to R CMD check. Default
+includes "--no-manual" to skip PDF manual building.}
+
+\item{error_on}{Severity level that causes an error: "error", "warning", or "note".
+Default is "warning" (fails on errors or warnings).}
 }
 \value{
-TRUE if all checks pass, FALSE otherwise.
+TRUE if check passes, FALSE otherwise (invisibly).
+  Also throws an error if check fails at or above error_on level.
 }
 \description{
-Validates that Rd files and NAMESPACE are syntactically correct.
+Runs R CMD build and R CMD check on the package.
 }
 \examples{
 \dontrun{
 check()
+check(error_on = "error")  # Only fail on errors, not warnings
+check(args = c("--as-cran", "--no-manual"))
 }
 }

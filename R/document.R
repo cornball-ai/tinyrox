@@ -102,70 +102,107 @@ clean <- function(path = ".", namespace = FALSE) {
   invisible(NULL)
 }
 
-#' Check Package Documentation
+#' Check Package
 #'
-#' Validates that Rd files and NAMESPACE are syntactically correct.
+#' Runs R CMD build and R CMD check on the package.
 #'
 #' @param path Path to package root directory.
+#' @param args Character vector of additional arguments to pass to R CMD check.
+#'   Default includes "--no-manual" to skip PDF manual building.
+#' @param error_on Severity level that causes an error: "error", "warning", or
+#'   "note". Default is "warning" (fails on errors or warnings).
 #'
-#' @return TRUE if all checks pass, FALSE otherwise.
+#' @return TRUE if check passes, FALSE otherwise (invisibly).
+#'   Also throws an error if check fails at or above error_on level.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' check()
+#' check(error_on = "error")  # Only fail on errors, not warnings
+#' check(args = c("--as-cran", "--no-manual"))
 #' }
-check <- function(path = ".") {
-  all_ok <- TRUE
+check <- function(path = ".", args = "--no-manual",
+                  error_on = c("warning", "error", "note")) {
+  error_on <- match.arg(error_on)
 
-  # Check Rd files
-  man_dir <- file.path(path, "man")
-  if (dir.exists(man_dir)) {
-    rd_files <- list.files(man_dir, pattern = "\\.Rd$", full.names = TRUE)
+  # Get absolute path
+  path <- normalizePath(path, mustWork = TRUE)
 
-    for (rd_file in rd_files) {
-      result <- tryCatch({
-        tools::parse_Rd(rd_file)
-        TRUE
-      }, error = function(e) {
-        message("Error in ", basename(rd_file), ": ", e$message)
-        FALSE
-      })
-
-      if (!result) all_ok <- FALSE
-    }
-
-    if (all_ok && length(rd_files) > 0) {
-      message("All ", length(rd_files), " Rd files are valid.")
-    }
+  # Get package name from DESCRIPTION
+  desc_file <- file.path(path, "DESCRIPTION")
+  if (!file.exists(desc_file)) {
+    stop("No DESCRIPTION file found in ", path, call. = FALSE)
   }
 
-  # Check NAMESPACE
-  ns_file <- file.path(path, "NAMESPACE")
-  if (file.exists(ns_file)) {
-    result <- tryCatch({
-      parseNamespaceFile(basename(path), dirname(path))
-      TRUE
-    }, error = function(e) {
-      # parseNamespaceFile is picky - try simpler check
-      tryCatch({
-        parse(file = ns_file)
-        TRUE
-      }, error = function(e2) {
-        message("Error in NAMESPACE: ", e2$message)
-        FALSE
-      })
-    })
+  desc <- read.dcf(desc_file)
+  pkg_name <- desc[1, "Package"]
+  pkg_version <- desc[1, "Version"]
 
-    if (result) {
-      message("NAMESPACE is valid.")
-    } else {
-      all_ok <- FALSE
-    }
+  # Create temp directory for build/check
+  tmp_dir <- tempfile("rhydrogen_check_")
+  dir.create(tmp_dir)
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+
+  # Build the package
+  message("Building ", pkg_name, "...")
+  build_cmd <- paste("R CMD build", shQuote(path))
+  old_wd <- setwd(tmp_dir)
+  on.exit(setwd(old_wd), add = TRUE)
+
+  build_result <- system(build_cmd, ignore.stdout = TRUE, ignore.stderr = TRUE)
+  if (build_result != 0) {
+    # Re-run to show errors
+    system(build_cmd)
+    stop("R CMD build failed", call. = FALSE)
   }
 
-  invisible(all_ok)
+  # Find the tarball
+  tarball <- paste0(pkg_name, "_", pkg_version, ".tar.gz")
+  if (!file.exists(tarball)) {
+    stop("Expected tarball not found: ", tarball, call. = FALSE)
+  }
+
+  # Run R CMD check
+  message("Checking ", pkg_name, "...")
+  check_cmd <- paste("R CMD check", paste(args, collapse = " "), shQuote(tarball))
+  check_result <- system(check_cmd)
+
+  # Parse check results
+  check_dir <- paste0(pkg_name, ".Rcheck")
+  log_file <- file.path(check_dir, "00check.log")
+
+  if (file.exists(log_file)) {
+    log <- readLines(log_file, warn = FALSE)
+
+    # Count issues
+    errors <- sum(grepl("^ERROR", log))
+    warnings <- sum(grepl("^WARNING", log))
+    notes <- sum(grepl("^NOTE", log))
+
+    # Print summary
+    message("\n", pkg_name, " ", pkg_version, ": ",
+            errors, " error(s), ", warnings, " warning(s), ", notes, " note(s)")
+
+    # Determine if we should error
+    should_error <- switch(error_on,
+      "note" = errors > 0 || warnings > 0 || notes > 0,
+      "warning" = errors > 0 || warnings > 0,
+      "error" = errors > 0
+    )
+
+    if (should_error) {
+      stop("R CMD check found issues", call. = FALSE)
+    }
+
+    invisible(TRUE)
+  } else {
+    if (check_result != 0) {
+      stop("R CMD check failed", call. = FALSE)
+    }
+    invisible(TRUE)
+  }
 }
 
 #' Install Package
