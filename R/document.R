@@ -26,13 +26,16 @@
 #' # Document without modifying NAMESPACE
 #' document(namespace = "none")
 #' }
-document <- function(path = ".", namespace = c("overwrite", "append", "none")) {
+document <- function(
+  path = ".",
+  namespace = c("overwrite", "append", "none")
+) {
   namespace <- match.arg(namespace)
 
   # Validate path
   if (!file.exists(file.path(path, "DESCRIPTION"))) {
     stop("No DESCRIPTION file found in ", path,
-         ". Is this an R package?", call. = FALSE)
+      ". Is this an R package?", call. = FALSE)
   }
 
   # Parse all R files
@@ -61,9 +64,9 @@ document <- function(path = ".", namespace = c("overwrite", "append", "none")) {
   }
 
   invisible(list(
-    rd_files = rd_files,
-    namespace = ns_file
-  ))
+      rd_files = rd_files,
+      namespace = ns_file
+    ))
 }
 
 #' Clean Generated Files
@@ -80,7 +83,10 @@ document <- function(path = ".", namespace = c("overwrite", "append", "none")) {
 #' clean()
 #' clean(namespace = TRUE)
 #' }
-clean <- function(path = ".", namespace = FALSE) {
+clean <- function(
+  path = ".",
+  namespace = FALSE
+) {
   man_dir <- file.path(path, "man")
 
   if (dir.exists(man_dir)) {
@@ -123,8 +129,11 @@ clean <- function(path = ".", namespace = FALSE) {
 #' check(error_on = "error")  # Only fail on errors, not warnings
 #' check(args = c("--as-cran", "--no-manual"))
 #' }
-check <- function(path = ".", args = c("--as-cran", "--no-manual"),
-                  error_on = c("warning", "error", "note")) {
+check <- function(
+  path = ".",
+  args = c("--as-cran", "--no-manual"),
+  error_on = c("warning", "error", "note")
+) {
   error_on <- match.arg(error_on)
 
   # Get absolute path
@@ -183,7 +192,7 @@ check <- function(path = ".", args = c("--as-cran", "--no-manual"),
 
     # Print summary
     message("\n", pkg_name, " ", pkg_version, ": ",
-            errors, " error(s), ", warnings, " warning(s), ", notes, " note(s)")
+      errors, " error(s), ", warnings, " warning(s), ", notes, " note(s)")
 
     # Determine if we should error
     should_error <- switch(error_on,
@@ -221,7 +230,10 @@ check <- function(path = ".", args = c("--as-cran", "--no-manual"),
 #' install()
 #' install(quiet = FALSE)  # Show full output
 #' }
-install <- function(path = ".", quiet = TRUE) {
+install <- function(
+  path = ".",
+  quiet = TRUE
+) {
   # Get absolute path
   path <- normalizePath(path, mustWork = TRUE)
 
@@ -276,7 +288,10 @@ install <- function(path = ".", quiet = TRUE) {
 #' load_all()
 #' load_all(quiet = FALSE)  # Show each file being sourced
 #' }
-load_all <- function(path = ".", quiet = TRUE) {
+load_all <- function(
+  path = ".",
+  quiet = TRUE
+) {
   r_dir <- file.path(path, "R")
 
   if (!dir.exists(r_dir)) {
@@ -331,7 +346,11 @@ load_all <- function(path = ".", quiet = TRUE) {
 #' reload()  # Document, install, and reload current package
 #' reload(document = FALSE)  # Just reinstall and reload
 #' }
-reload <- function(path = ".", document = TRUE, quiet = TRUE) {
+reload <- function(
+  path = ".",
+  document = TRUE,
+  quiet = TRUE
+) {
   # Get package name from DESCRIPTION
   desc_file <- file.path(path, "DESCRIPTION")
   if (!file.exists(desc_file)) {
@@ -350,26 +369,26 @@ reload <- function(path = ".", document = TRUE, quiet = TRUE) {
   pkg_loaded <- paste0("package:", pkg_name)
   if (pkg_loaded %in% search()) {
     tryCatch({
-      detach(pkg_loaded, unload = TRUE, character.only = TRUE)
-      message("Unloaded ", pkg_name)
-    }, error = function(e) {
-      # Sometimes unload fails due to dependencies, just detach
-      tryCatch({
-        detach(pkg_loaded, character.only = TRUE)
-        message("Detached ", pkg_name, " (could not fully unload)")
-      }, error = function(e2) {
-        message("Note: Could not detach ", pkg_name, ": ", e2$message)
+        detach(pkg_loaded, unload = TRUE, character.only = TRUE)
+        message("Unloaded ", pkg_name)
+      }, error = function(e) {
+        # Sometimes unload fails due to dependencies, just detach
+        tryCatch({
+            detach(pkg_loaded, character.only = TRUE)
+            message("Detached ", pkg_name, " (could not fully unload)")
+          }, error = function(e2) {
+            message("Note: Could not detach ", pkg_name, ": ", e2$message)
+          })
       })
-    })
   }
 
   # Also unload namespace if still loaded
   if (pkg_name %in% loadedNamespaces()) {
     tryCatch({
-      unloadNamespace(pkg_name)
-    }, error = function(e) {
-      # Ignore - will be handled by library() reload
-    })
+        unloadNamespace(pkg_name)
+      }, error = function(e) {
+        # Ignore - will be handled by library() reload
+      })
   }
 
   # Reinstall
@@ -383,3 +402,4 @@ reload <- function(path = ".", document = TRUE, quiet = TRUE) {
 
   invisible(success)
 }
+

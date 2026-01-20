@@ -75,17 +75,17 @@ generate_namespace <- function(blocks) {
       s3m <- tags$exportS3Method
       if (!is.null(s3m$generic) && !is.null(s3m$class)) {
         s3methods <- c(s3methods, list(list(
-          generic = s3m$generic,
-          class = s3m$class
-        )))
+              generic = s3m$generic,
+              class = s3m$class
+            )))
       } else if (!is.null(s3m$explicit)) {
         # Try to parse from function name: generic.class
-        parts <- strsplit(block$object, "\\.")[[1]]
+        parts <- strsplit(block$object, "\\.") [[1]]
         if (length(parts) >= 2) {
           s3methods <- c(s3methods, list(list(
-            generic = parts[1],
-            class = paste(parts[-1], collapse = ".")
-          )))
+                generic = parts[1],
+                class = paste(parts[- 1], collapse = ".")
+              )))
         }
       }
     }
@@ -175,7 +175,11 @@ generate_namespace <- function(blocks) {
 #' @param path Package root path.
 #' @param mode Either "overwrite" or "append".
 #' @keywords internal
-write_namespace <- function(content, path = ".", mode = "overwrite") {
+write_namespace <- function(
+  content,
+  path = ".",
+  mode = "overwrite"
+) {
   filepath <- file.path(path, "NAMESPACE")
 
   if (mode == "overwrite") {
@@ -194,13 +198,21 @@ write_namespace <- function(content, path = ".", mode = "overwrite") {
 
       if (length(start_pos) > 0 && length(end_pos) > 0) {
         # Replace between markers
-        before <- if (start_pos[1] > 1) existing[1:(start_pos[1] - 1)] else character()
-        after <- if (end_pos[1] < length(existing)) existing[(end_pos[1] + 1):length(existing)] else character()
+        if (start_pos[1] > 1) {
+          before <- existing[1:(start_pos[1] - 1)]
+        } else {
+          before <- character()
+        }
+        if (end_pos[1] < length(existing)) {
+          after <- existing[(end_pos[1] + 1) :length(existing)]
+        } else {
+          after <- character()
+        }
 
         new_content <- c(
           before,
           start_marker,
-          strsplit(content, "\n")[[1]],
+          strsplit(content, "\n") [[1]],
           end_marker,
           after
         )
@@ -210,7 +222,7 @@ write_namespace <- function(content, path = ".", mode = "overwrite") {
           existing,
           "",
           start_marker,
-          strsplit(content, "\n")[[1]],
+          strsplit(content, "\n") [[1]],
           end_marker
         )
       }
@@ -218,7 +230,7 @@ write_namespace <- function(content, path = ".", mode = "overwrite") {
       # New file
       new_content <- c(
         start_marker,
-        strsplit(content, "\n")[[1]],
+        strsplit(content, "\n") [[1]],
         end_marker
       )
     }
@@ -245,11 +257,11 @@ detect_s3_method <- function(name) {
 
   # Try progressively longer generic names
   # e.g., for "as.data.frame.foo", try "as", "as.data", "as.data.frame"
-  parts <- strsplit(name, "\\.")[[1]]
+  parts <- strsplit(name, "\\.") [[1]]
 
   for (i in seq_len(length(parts) - 1)) {
     generic <- paste(parts[1:i], collapse = ".")
-    class <- paste(parts[(i + 1):length(parts)], collapse = ".")
+    class <- paste(parts[(i + 1) :length(parts)], collapse = ".")
 
     if (generic %in% KNOWN_S3_GENERICS) {
       return(list(generic = generic, class = class))
@@ -258,3 +270,4 @@ detect_s3_method <- function(name) {
 
   NULL
 }
+

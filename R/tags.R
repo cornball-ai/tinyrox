@@ -46,7 +46,12 @@ SUPPORTED_TAGS <- c(SUPPORTED_DOC_TAGS, SUPPORTED_NS_TAGS)
 #' @param line_num Starting line number (for error messages).
 #' @return A list with parsed tag values.
 #' @keywords internal
-parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
+parse_tags <- function(
+  lines,
+  object_name,
+  file = NULL,
+  line_num = NULL
+) {
   result <- list(
     title = NULL,
     description = NULL,
@@ -87,15 +92,15 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
     # Check if line starts a new tag
     tag_match <- regexec("^@([a-zA-Z0-9]+)(\\s+(.*))?$", line)
 
-    if (tag_match[[1]][1] != -1) {
+    if (tag_match[[1]][1] != - 1) {
       # Save previous tag
       if (!is.null(current_tag)) {
         result <- save_tag(result, current_tag, current_arg, accumulator,
-                          file, line_num)
+          file, line_num)
       }
 
       # Start new tag
-      parts <- regmatches(line, tag_match)[[1]]
+      parts <- regmatches(line, tag_match) [[1]]
       current_tag <- parts[2]
       current_arg <- if (length(parts) >= 4 && nchar(parts[4]) > 0) {
         trimws(parts[4])
@@ -112,8 +117,8 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
           ""
         }
         stop("Unknown tag @", current_tag, location,
-             "\nSupported tags: ", paste(SUPPORTED_TAGS, collapse = ", "),
-             call. = FALSE)
+          "\nSupported tags: ", paste(SUPPORTED_TAGS, collapse = ", "),
+          call. = FALSE)
       }
     } else if (!is.null(current_tag)) {
       # Continuation of current tag
@@ -135,7 +140,7 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
   # Save final tag
   if (!is.null(current_tag)) {
     result <- save_tag(result, current_tag, current_arg, accumulator,
-                      file, line_num)
+      file, line_num)
   }
 
   result
@@ -144,7 +149,14 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
 #' Save a Parsed Tag Value
 #'
 #' @keywords internal
-save_tag <- function(result, tag, arg, accumulator, file, line_num) {
+save_tag <- function(
+  result,
+  tag,
+  arg,
+  accumulator,
+  file,
+  line_num
+) {
   # Combine arg and accumulator
   value <- if (!is.null(arg) && length(accumulator) > 0) {
     paste(c(arg, accumulator), collapse = "\n")
@@ -170,22 +182,22 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
     },
     "param" = {
       # Parse param: first word is name, rest is description
-      parts <- strsplit(value, "\\s+", perl = TRUE)[[1]]
+      parts <- strsplit(value, "\\s+", perl = TRUE) [[1]]
       if (length(parts) >= 1) {
         param_name <- parts[1]
         param_desc <- if (length(parts) > 1) {
-          paste(parts[-1], collapse = " ")
+          paste(parts[- 1], collapse = " ")
         } else {
           ""
         }
         result$params[[param_name]] <- param_desc
       }
     },
-    "return" = ,
+    "return" =,
     "value" = {
       result$return <- value
     },
-    "examples" = ,
+    "examples" =,
     "example" = {
       # Examples are verbatim - include the arg if present
       if (!is.null(arg)) {
@@ -202,10 +214,10 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
     },
     "aliases" = {
       # Split on whitespace
-      result$aliases <- c(result$aliases, strsplit(value, "\\s+")[[1]])
+      result$aliases <- c(result$aliases, strsplit(value, "\\s+") [[1]])
     },
     "keywords" = {
-      result$keywords <- c(result$keywords, strsplit(value, "\\s+")[[1]])
+      result$keywords <- c(result$keywords, strsplit(value, "\\s+") [[1]])
     },
     "family" = {
       result$family <- value
@@ -221,7 +233,7 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
     },
     "exportS3Method" = {
       # Parse: generic class
-      parts <- strsplit(value, "\\s+")[[1]]
+      parts <- strsplit(value, "\\s+") [[1]]
       if (length(parts) >= 2) {
         result$exportS3Method <- list(generic = parts[1], class = parts[2])
       } else if (length(parts) == 1 && nchar(parts[1]) > 0) {
@@ -234,12 +246,12 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
     },
     "importFrom" = {
       # Parse: pkg sym1 sym2 ...
-      parts <- strsplit(value, "\\s+")[[1]]
+      parts <- strsplit(value, "\\s+") [[1]]
       if (length(parts) >= 2) {
         result$importFroms <- c(result$importFroms, list(list(
-          pkg = parts[1],
-          symbols = parts[-1]
-        )))
+              pkg = parts[1],
+              symbols = parts[- 1]
+            )))
       }
     },
     "useDynLib" = {
@@ -262,9 +274,9 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
           ""
         }
         result$sections <- c(result$sections, list(list(
-          title = sec_title,
-          content = sec_content
-        )))
+              title = sec_title,
+              content = sec_content
+            )))
       }
     },
     "author" = {
@@ -274,3 +286,4 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
 
   result
 }
+

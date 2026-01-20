@@ -5,7 +5,11 @@
 #' @param source_file Source file path (for header comment).
 #' @return Character string of Rd content.
 #' @keywords internal
-generate_rd <- function(tags, formals = NULL, source_file = NULL) {
+generate_rd <- function(
+  tags,
+  formals = NULL,
+  source_file = NULL
+) {
   lines <- character()
 
   # Header comment (like roxygen2)
@@ -27,7 +31,11 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL) {
   }
 
   # Title (required)
-  title <- if (!is.null(tags$title)) tags$title else tags$name
+  if (!is.null(tags$title)) {
+    title <- tags$title
+  } else {
+    title <- tags$name
+  }
   lines <- c(lines, paste0("\\title{", escape_rd(title), "}"))
 
   # Usage (for functions) - before arguments like roxygen2
@@ -43,7 +51,11 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL) {
   if (length(tags$params) > 0) {
     lines <- c(lines, "\\arguments{")
     # Use formals order if available, otherwise param order
-    formal_names <- if (!is.null(formals)) formals$names else character()
+    if (!is.null(formals)) {
+      formal_names <- formals$names
+    } else {
+      formal_names <- character()
+    }
     param_order <- if (length(formal_names) > 0) {
       c(intersect(formal_names, names(tags$params)),
         setdiff(names(tags$params), formal_names))
@@ -156,7 +168,10 @@ escape_rd <- function(text) {
 #' @param args Character vector of arguments with defaults.
 #' @return Formatted usage string.
 #' @keywords internal
-format_usage <- function(name, args) {
+format_usage <- function(
+  name,
+  args
+) {
   # Build single-line version
   single_line <- paste0(name, "(", paste(args, collapse = ", "), ")")
 
@@ -173,7 +188,11 @@ format_usage <- function(name, args) {
 
   for (i in seq_along(args)) {
     arg <- args[i]
-    suffix <- if (i < length(args)) "," else ""
+    if (i < length(args)) {
+      suffix <- ","
+    } else {
+      suffix <- ""
+    }
     lines <- c(lines, paste0(indent, arg, suffix))
   }
 
@@ -189,20 +208,23 @@ format_usage <- function(name, args) {
 #' @param width Maximum line width.
 #' @return Wrapped text with newlines.
 #' @keywords internal
-wrap_text <- function(text, width = 72) {
+wrap_text <- function(
+  text,
+  width = 72
+) {
   if (is.null(text) || nchar(text) <= width) {
     return(text)
   }
 
   # Split into words
 
-  words <- strsplit(text, "\\s+")[[1]]
+  words <- strsplit(text, "\\s+") [[1]]
   if (length(words) == 0) return(text)
 
   lines <- character()
   current_line <- words[1]
 
-  for (word in words[-1]) {
+  for (word in words[- 1]) {
     test_line <- paste(current_line, word)
     if (nchar(test_line) <= width) {
       current_line <- test_line
@@ -222,7 +244,11 @@ wrap_text <- function(text, width = 72) {
 #' @param name Topic name.
 #' @param path Package root path.
 #' @keywords internal
-write_rd <- function(content, name, path = ".") {
+write_rd <- function(
+  content,
+  name,
+  path = "."
+) {
   man_dir <- file.path(path, "man")
 
   if (!dir.exists(man_dir)) {
@@ -244,7 +270,10 @@ write_rd <- function(content, name, path = ".") {
 #' @param path Package root path.
 #' @return Character vector of generated file paths.
 #' @keywords internal
-generate_all_rd <- function(blocks, path = ".") {
+generate_all_rd <- function(
+  blocks,
+  path = "."
+) {
   generated <- character()
   topics_seen <- character()
 
@@ -291,7 +320,7 @@ generate_all_rd <- function(blocks, path = ".") {
     # Check for duplicate topics
     if (tags$name %in% topics_seen) {
       warning("Duplicate topic '", tags$name, "' - skipping",
-              call. = FALSE)
+        call. = FALSE)
       next
     }
     topics_seen <- c(topics_seen, tags$name)
@@ -316,8 +345,8 @@ generate_all_rd <- function(blocks, path = ".") {
       undoc <- setdiff(undoc, "...")
       if (length(undoc) > 0) {
         warning("Undocumented parameters in ", tags$name, ": ",
-                paste(undoc, collapse = ", "),
-                call. = FALSE)
+          paste(undoc, collapse = ", "),
+          call. = FALSE)
       }
     }
   }
@@ -348,7 +377,11 @@ get_package_name <- function(path) {
 #' @param source_file Source file path.
 #' @return Character string of Rd content.
 #' @keywords internal
-generate_package_rd <- function(tags, pkg_name, source_file) {
+generate_package_rd <- function(
+  tags,
+  pkg_name,
+  source_file
+) {
   lines <- character()
 
   # Header
@@ -388,7 +421,7 @@ generate_package_rd <- function(tags, pkg_name, source_file) {
   if (!is.null(tags$sections)) {
     for (sec in tags$sections) {
       lines <- c(lines, paste0("\\section{", escape_rd(sec$title), "}{"))
-      lines <- c(lines, sec$content)  # Content may have Rd markup, don't escape
+      lines <- c(lines, sec$content) # Content may have Rd markup, don't escape
       lines <- c(lines, "}")
     }
   }
@@ -419,10 +452,18 @@ generate_package_rd <- function(tags, pkg_name, source_file) {
 #' @param formals Current function's formals (list with names and usage).
 #' @return Updated tags with inherited params merged in.
 #' @keywords internal
-resolve_inherit_params <- function(tags, all_tags, formals) {
+resolve_inherit_params <- function(
+  tags,
+  all_tags,
+  formals
+) {
   # Get the current function's formal parameter names
 
-  formal_names <- if (!is.null(formals)) formals$names else character()
+  if (!is.null(formals)) {
+    formal_names <- formals$names
+  } else {
+    formal_names <- character()
+  }
 
   for (source_name in tags$inheritParams) {
     # Handle pkg::function syntax
@@ -437,7 +478,7 @@ resolve_inherit_params <- function(tags, all_tags, formals) {
 
     if (is.null(source_tags)) {
       warning("@inheritParams: source function '", source_name,
-              "' not found in package", call. = FALSE)
+        "' not found in package", call. = FALSE)
       next
     }
 
@@ -460,3 +501,4 @@ resolve_inherit_params <- function(tags, all_tags, formals) {
 
   tags
 }
+

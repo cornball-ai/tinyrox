@@ -21,7 +21,10 @@ NULL
 #' build()
 #' build(dest_dir = tempdir())
 #' }
-build <- function(path = ".", dest_dir = ".") {
+build <- function(
+  path = ".",
+  dest_dir = "."
+) {
 
   path <- normalizePath(path, mustWork = TRUE)
   dest_dir <- normalizePath(dest_dir, mustWork = TRUE)
@@ -95,9 +98,9 @@ pkg_maintainer <- function(path = ".") {
           auth <- authors[i]
           if ("cre" %in% auth$role) {
             return(list(
-              name = paste(auth$given, auth$family),
-              email = auth$email
-            ))
+                name = paste(auth$given, auth$family),
+                email = auth$email
+              ))
           }
         }
       }
@@ -105,15 +108,15 @@ pkg_maintainer <- function(path = ".") {
   }
 
   # Fall back to Maintainer field
- if ("Maintainer" %in% colnames(desc)) {
+  if ("Maintainer" %in% colnames(desc)) {
     maint <- desc[1, "Maintainer"]
     # Parse "Name <email>" format
-    match <- regmatches(maint, regexec("^(.+?)\\s*<(.+)>$", maint))[[1]]
+    match <- regmatches(maint, regexec("^(.+?)\\s*<(.+)>$", maint)) [[1]]
     if (length(match) == 3) {
       return(list(
-        name = trimws(match[2]),
-        email = trimws(match[3])
-      ))
+          name = trimws(match[2]),
+          email = trimws(match[3])
+        ))
     }
   }
 
@@ -138,7 +141,10 @@ pkg_maintainer <- function(path = ".") {
 #' check_win_devel()
 #' check_win_devel(r_version = "release")
 #' }
-check_win_devel <- function(path = ".", r_version = c("devel", "release", "oldrelease")) {
+check_win_devel <- function(
+  path = ".",
+  r_version = c("devel", "release", "oldrelease")
+) {
   r_version <- match.arg(r_version)
 
   # Build the package
@@ -164,11 +170,11 @@ check_win_devel <- function(path = ".", r_version = c("devel", "release", "oldre
 
   # Upload via FTP using curl
   result <- tryCatch({
-    curl::curl_upload(tarball, ftp_url)
-    TRUE
-  }, error = function(e) {
-    stop("FTP upload failed: ", e$message, call. = FALSE)
-  })
+      curl::curl_upload(tarball, ftp_url)
+      TRUE
+    }, error = function(e) {
+      stop("FTP upload failed: ", e$message, call. = FALSE)
+    })
 
   message("Upload complete. Check your email for results (usually within 30 minutes).")
   invisible(TRUE)
@@ -190,7 +196,10 @@ check_win_devel <- function(path = ".", r_version = c("devel", "release", "oldre
 #' \dontrun{
 #' submit_cran()
 #' }
-submit_cran <- function(path = ".", comments = "cran-comments.md") {
+submit_cran <- function(
+  path = ".",
+  comments = "cran-comments.md"
+) {
   path <- normalizePath(path, mustWork = TRUE)
 
   # Get package info
@@ -226,13 +235,13 @@ submit_cran <- function(path = ".", comments = "cran-comments.md") {
   on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
 
   tarball <- build(path, dest_dir = tmp_dir)
-  tarball_size <- file.info(tarball)$size
+  tarball_size <- file.info(tarball) $size
   message("Package size: ", format(structure(tarball_size, class = "object_size"),
-                                   units = "auto"))
+      units = "auto"))
 
   # Final confirmation
   response <- readline(paste0("Ready to submit ", pkg_name, " ", pkg_version,
-                              " to CRAN? (y/n): "))
+      " to CRAN? (y/n): "))
   if (!tolower(response) %in% c("y", "yes")) {
     message("Submission cancelled.")
     return(invisible(FALSE))
@@ -245,18 +254,18 @@ submit_cran <- function(path = ".", comments = "cran-comments.md") {
 
   # Submit
   response <- tryCatch({
-    h <- curl::new_handle()
-    curl::handle_setform(h,
-      name = maint$name,
-      email = maint$email,
-      uploaded_file = curl::form_file(tarball, type = "application/x-gzip"),
-      comment = comment_text,
-      upload = "Upload package"
-    )
-    curl::curl_fetch_memory(cran_url, handle = h)
-  }, error = function(e) {
-    stop("Upload failed: ", e$message, call. = FALSE)
-  })
+      h <- curl::new_handle()
+      curl::handle_setform(h,
+        name = maint$name,
+        email = maint$email,
+        uploaded_file = curl::form_file(tarball, type = "application/x-gzip"),
+        comment = comment_text,
+        upload = "Upload package"
+      )
+      curl::curl_fetch_memory(cran_url, handle = h)
+    }, error = function(e) {
+      stop("Upload failed: ", e$message, call. = FALSE)
+    })
 
   # Check response
   if (response$status_code == 200) {
@@ -265,7 +274,7 @@ submit_cran <- function(path = ".", comments = "cran-comments.md") {
 
     # Look for the package ID in the response
     id_match <- regmatches(response_text,
-                           regexec('name="pkg_id"[^>]*value="([^"]+)"', response_text))[[1]]
+      regexec('name="pkg_id"[^>]*value="([^"]+)"', response_text)) [[1]]
 
     if (length(id_match) >= 2) {
       pkg_id <- id_match[2]
@@ -305,3 +314,4 @@ submit_cran <- function(path = ".", comments = "cran-comments.md") {
     stop("Submission failed with status: ", response$status_code, call. = FALSE)
   }
 }
+
