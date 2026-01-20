@@ -64,8 +64,11 @@ generate_rd <- function(
     }
     for (i in seq_along(param_order)) {
       param <- param_order[i]
-      # Wrap long descriptions at ~72 chars
-      desc_text <- wrap_text(escape_rd(tags$params[[param]]), width = 72)
+      desc_text <- escape_rd(tags$params[[param]])
+      # Only wrap if single line and too long; preserve existing line breaks
+      if (!grepl("\n", desc_text) && nchar(desc_text) > 72) {
+        desc_text <- wrap_text(desc_text, width = 72)
+      }
       lines <- c(lines, paste0("\\item{", escape_rd(param), "}{", desc_text, "}"))
       # Add blank line between items (except after last)
       if (i < length(param_order)) {

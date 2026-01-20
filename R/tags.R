@@ -182,16 +182,20 @@ save_tag <- function(
     },
     "param" = {
       # Parse param: first word is name, rest is description
-      parts <- strsplit(value, "\\s+", perl = TRUE) [[1]]
-      if (length(parts) >= 1) {
-        param_name <- parts[1]
-        param_desc <- if (length(parts) > 1) {
-          paste(parts[- 1], collapse = " ")
-        } else {
-          ""
-        }
-        result$params[[param_name]] <- param_desc
+      # Preserve line breaks in description (like roxygen2)
+      first_ws <- regexpr("\\s", value)
+      if (first_ws > 0) {
+        param_name <- substr(value, 1, first_ws - 1)
+        param_desc <- substr(value, first_ws + 1, nchar(value))
+        # Normalize: trim leading/trailing whitespace on each line, preserve breaks
+        desc_lines <- strsplit(param_desc, "\n")[[1]]
+        desc_lines <- trimws(desc_lines)
+        param_desc <- paste(desc_lines, collapse = "\n")
+      } else {
+        param_name <- value
+        param_desc <- ""
       }
+      result$params[[param_name]] <- param_desc
     },
     "return" =,
     "value" = {
