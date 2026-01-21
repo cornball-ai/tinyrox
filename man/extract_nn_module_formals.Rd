@@ -14,7 +14,6 @@ List with 'names' (argument names) and 'usage' (formatted for Rd),
   or NULL if initialize method not found.
 }
 \description{
-Extracts the formals from the initialize method of an nn_module
-definition.
+Extracts the formals from the initialize method of an nn_module definition.
 }
 \keyword{internal}

@@ -95,10 +95,7 @@ generate_rd <- function(
   }
   lines <- c(lines, "\\description{")
   desc_escaped <- escape_rd(desc)
-  # Only wrap if single line and too long; preserve existing line breaks
-  if (!grepl("\n", desc_escaped) && nchar(desc_escaped) > 72) {
-    desc_escaped <- wrap_text(desc_escaped, width = 72)
-  }
+  # Preserve description exactly as written (roxygen2 doesn't wrap)
   lines <- c(lines, desc_escaped)
   lines <- c(lines, "}")
 
@@ -116,18 +113,19 @@ generate_rd <- function(
     lines <- c(lines, "}")
   }
 
-  # See Also
-  if (!is.null(tags$seealso)) {
-    lines <- c(lines, "\\seealso{")
-    lines <- c(lines, escape_rd(tags$seealso))
+  # Examples (before seealso like roxygen2)
+  if (!is.null(tags$examples) && nchar(trimws(tags$examples)) > 0) {
+    lines <- c(lines, "\\examples{")
+    # Escape % in examples (Rd comment character), but leave other content verbatim
+    examples_escaped <- gsub("%", "\\\\%", tags$examples)
+    lines <- c(lines, examples_escaped)
     lines <- c(lines, "}")
   }
 
-  # Examples
-  if (!is.null(tags$examples) && nchar(trimws(tags$examples)) > 0) {
-    lines <- c(lines, "\\examples{")
-    # Examples are verbatim - don't escape
-    lines <- c(lines, tags$examples)
+  # See Also (after examples like roxygen2)
+  if (!is.null(tags$seealso)) {
+    lines <- c(lines, "\\seealso{")
+    lines <- c(lines, escape_rd(tags$seealso))
     lines <- c(lines, "}")
   }
 
@@ -158,8 +156,8 @@ escape_rd <- function(text) {
     return(text)
   }
 
-  # No Rd markup - escape all special chars
-  text <- gsub("\\\\", "\\\\\\\\", text)
+  # No Rd markup - escape braces and percent only
+  # Don't escape backslashes - unknown sequences pass through in Rd (like roxygen2)
   text <- gsub("\\{", "\\\\{", text)
   text <- gsub("\\}", "\\\\}", text)
   text <- gsub("%", "\\\\%", text)
@@ -422,10 +420,7 @@ generate_package_rd <- function(
   if (!is.null(tags$description)) {
     lines <- c(lines, "\\description{")
     desc_escaped <- escape_rd(tags$description)
-    # Only wrap if single line and too long; preserve existing line breaks
-    if (!grepl("\n", desc_escaped) && nchar(desc_escaped) > 72) {
-      desc_escaped <- wrap_text(desc_escaped, width = 72)
-    }
+    # Preserve description exactly as written (roxygen2 doesn't wrap)
     lines <- c(lines, desc_escaped)
     lines <- c(lines, "}")
   }
