@@ -171,10 +171,10 @@ parse_object_definition <- function(
       ))
   }
 
-  # Not a function
+  # Not a function - treat as data object
   list(
     name = name,
-    type = "other",
+    type = "data",
     formals = NULL
   )
 }

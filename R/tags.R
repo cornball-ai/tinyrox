@@ -124,14 +124,27 @@ parse_tags <- function(
       # Continuation of current tag
       accumulator <- c(accumulator, line)
     } else {
-      # Before any tag - this is title/description
-      if (is.null(result$title) && nchar(trimws(line)) > 0) {
-        result$title <- trimws(line)
-      } else if (!is.null(result$title) && nchar(trimws(line)) > 0) {
-        if (is.null(result$description)) {
+      # Before any tag - roxygen2 behavior:
+      # - All lines up to first blank line = title (first paragraph)
+      # - Lines after first blank line = description
+      # - If no description, description = title
+      if (nchar(trimws(line)) == 0) {
+        # Blank line - marks end of title paragraph, start of description
+        if (!is.null(result$title) && is.null(result$description)) {
+          result$description <- ""
+        }
+      } else if (is.null(result$description)) {
+        # Still in title paragraph (no blank line yet)
+        if (is.null(result$title)) {
+          result$title <- trimws(line)
+        } else {
+          result$title <- paste(result$title, trimws(line), sep = "\n")
+        }
+      } else {
+        # After blank line - building description
+        if (nchar(result$description) == 0) {
           result$description <- trimws(line)
         } else {
-          # Preserve line breaks in description (like roxygen2)
           result$description <- paste(result$description, trimws(line), sep = "\n")
         }
       }
@@ -142,6 +155,11 @@ parse_tags <- function(
   if (!is.null(current_tag)) {
     result <- save_tag(result, current_tag, current_arg, accumulator,
       file, line_num)
+  }
+
+  # roxygen2 behavior: if no explicit @description, use title as description
+  if (is.null(result$description) || nchar(result$description) == 0) {
+    result$description <- result$title
   }
 
   result
