@@ -17,7 +17,7 @@ A list of documentation blocks, each with components:
   - formals: for functions, the formal arguments
 }
 \description{
-Extracts documentation comment blocks and their associated objects from
-R source files.
+Extracts documentation comment blocks and their associated objects
+from R source files.
 }
 \keyword{internal}

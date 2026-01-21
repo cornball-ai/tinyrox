@@ -18,8 +18,7 @@ TRUE if successful (invisibly).
 }
 \description{
 Unloads a package if loaded, reinstalls it, and loads it again.
-Convenience function for the document-install-reload cycle during
-development.
+Convenience function for the document-install-reload cycle during development.
 }
 \examples{
 \dontrun{

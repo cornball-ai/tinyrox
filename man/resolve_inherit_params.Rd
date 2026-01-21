@@ -17,8 +17,8 @@ resolve_inherit_params(tags, all_tags, formals)
 Updated tags with inherited params merged in.
 }
 \description{
-Copies parameter documentation from source functions to the current
-function. Only inherits params that are: (1) in the current function's
-formals, and (2) not already documented in the current function.
+Copies parameter documentation from source functions to the current function.
+Only inherits params that are: (1) in the current function's formals, and
+(2) not already documented in the current function.
 }
 \keyword{internal}

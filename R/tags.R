@@ -131,7 +131,8 @@ parse_tags <- function(
         if (is.null(result$description)) {
           result$description <- trimws(line)
         } else {
-          result$description <- paste(result$description, trimws(line))
+          # Preserve line breaks in description (like roxygen2)
+          result$description <- paste(result$description, trimws(line), sep = "\n")
         }
       }
     }
@@ -148,6 +149,12 @@ parse_tags <- function(
 
 #' Save a Parsed Tag Value
 #'
+#' @param result Current result list to update.
+#' @param tag Tag name (e.g., "param", "return").
+#' @param arg First-line argument after the tag.
+#' @param accumulator Continuation lines for the tag.
+#' @param file Source file path (for error messages).
+#' @param line_num Line number (for error messages).
 #' @keywords internal
 save_tag <- function(
   result,

@@ -15,8 +15,8 @@ load_all(path = ".", quiet = TRUE)
 Character vector of sourced files (invisibly).
 }
 \description{
-Sources all R files in a package for interactive development, without
-requiring a full install.
+Sources all R files in a package for interactive development,
+without requiring a full install.
 }
 \examples{
 \dontrun{

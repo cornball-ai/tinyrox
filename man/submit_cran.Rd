@@ -15,8 +15,8 @@ submit_cran(path = ".", comments = "cran-comments.md")
 TRUE if submission succeeded (invisibly).
 }
 \description{
-Uploads package to CRAN for review. You will receive a confirmation
-email that must be clicked to complete the submission.
+Uploads package to CRAN for review. You will receive a confirmation email
+that must be clicked to complete the submission.
 }
 \examples{
 \dontrun{

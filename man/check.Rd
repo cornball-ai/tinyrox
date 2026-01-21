@@ -13,11 +13,11 @@ check(
 \arguments{
 \item{path}{Path to package root directory.}
 
-\item{args}{Character vector of additional arguments to pass to R CMD check. Default
-includes "--as-cran" and "--no-manual".}
+\item{args}{Character vector of additional arguments to pass to R CMD check.
+Default includes "--as-cran" and "--no-manual".}
 
-\item{error_on}{Severity level that causes an error: "error", "warning", or "note".
-Default is "warning" (fails on errors or warnings).}
+\item{error_on}{Severity level that causes an error: "error", "warning", or
+"note". Default is "warning" (fails on errors or warnings).}
 }
 \value{
 TRUE if check passes, FALSE otherwise (invisibly).

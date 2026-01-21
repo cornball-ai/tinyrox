@@ -16,7 +16,6 @@ Formatted usage string.
 }
 \description{
 Formats the function usage, wrapping to multiple lines if needed.
-Follows roxygen2 style: each argument on its own line if total > 80
-chars.
+Follows roxygen2 style: each argument on its own line if total > 80 chars.
 }
 \keyword{internal}

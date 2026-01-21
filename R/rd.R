@@ -78,21 +78,14 @@ generate_rd <- function(
     lines <- c(lines, "}")
   }
 
-  # Details
-  if (!is.null(tags$details)) {
-    lines <- c(lines, "\\details{")
-    lines <- c(lines, escape_rd(tags$details))
-    lines <- c(lines, "}")
-  }
-
-  # Value/Return
+  # Value/Return (before description like roxygen2)
   if (!is.null(tags$return)) {
     lines <- c(lines, "\\value{")
     lines <- c(lines, escape_rd(tags$return))
     lines <- c(lines, "}")
   }
 
-  # Description - after value like roxygen2
+  # Description
   desc <- if (!is.null(tags$description)) {
     tags$description
   } else if (!is.null(tags$title)) {
@@ -101,8 +94,20 @@ generate_rd <- function(
     tags$name
   }
   lines <- c(lines, "\\description{")
-  lines <- c(lines, wrap_text(escape_rd(desc), width = 72))
+  desc_escaped <- escape_rd(desc)
+  # Only wrap if single line and too long; preserve existing line breaks
+  if (!grepl("\n", desc_escaped) && nchar(desc_escaped) > 72) {
+    desc_escaped <- wrap_text(desc_escaped, width = 72)
+  }
+  lines <- c(lines, desc_escaped)
   lines <- c(lines, "}")
+
+  # Details (after description like roxygen2)
+  if (!is.null(tags$details)) {
+    lines <- c(lines, "\\details{")
+    lines <- c(lines, escape_rd(tags$details))
+    lines <- c(lines, "}")
+  }
 
   # References
   if (!is.null(tags$references)) {
@@ -416,7 +421,12 @@ generate_package_rd <- function(
   # Description
   if (!is.null(tags$description)) {
     lines <- c(lines, "\\description{")
-    lines <- c(lines, wrap_text(escape_rd(tags$description), width = 72))
+    desc_escaped <- escape_rd(tags$description)
+    # Only wrap if single line and too long; preserve existing line breaks
+    if (!grepl("\n", desc_escaped) && nchar(desc_escaped) > 72) {
+      desc_escaped <- wrap_text(desc_escaped, width = 72)
+    }
+    lines <- c(lines, desc_escaped)
     lines <- c(lines, "}")
   }
 

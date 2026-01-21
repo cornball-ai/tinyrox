@@ -9,8 +9,8 @@ check_win_devel(path = ".", r_version = c("devel", "release", "oldrelease"))
 \arguments{
 \item{path}{Path to package root directory.}
 
-\item{r_version}{Which R version to test: "devel", "release", or "oldrelease". Default is
-"devel".}
+\item{r_version}{Which R version to test: "devel", "release", or "oldrelease".
+Default is "devel".}
 }
 \value{
 TRUE if upload succeeded (invisibly).
