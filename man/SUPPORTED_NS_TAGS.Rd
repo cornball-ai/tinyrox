@@ -14,4 +14,3 @@ SUPPORTED_NS_TAGS
 Supported Namespace Tags
 }
 \keyword{internal}
-\keyword{datasets}

@@ -356,6 +356,7 @@ escape_rd <- function(text) {
 #'
 #' Formats the function usage, wrapping to multiple lines if needed.
 #' Follows roxygen2 style: each argument on its own line if total > 80 chars.
+#' S3 methods use `\method{generic}{class}` syntax.
 #'
 #' @param name Function name.
 #' @param args Character vector of arguments with defaults.
@@ -365,8 +366,16 @@ format_usage <- function(
   name,
   args
 ) {
+  # Check if it's an S3 method
+  s3_info <- detect_s3_method(name)
+  if (!is.null(s3_info)) {
+    display_name <- paste0("\\method{", s3_info$generic, "}{", s3_info$class, "}")
+  } else {
+    display_name <- name
+  }
+
   # Build single-line version
-  single_line <- paste0(name, "(", paste(args, collapse = ", "), ")")
+  single_line <- paste0(display_name, "(", paste(args, collapse = ", "), ")")
 
   # If short enough, use single line
   if (nchar(single_line) <= 80) {
@@ -377,7 +386,7 @@ format_usage <- function(
   # roxygen2 uses 2-space indent
   indent <- "  "
   lines <- character()
-  lines <- c(lines, paste0(name, "("))
+  lines <- c(lines, paste0(display_name, "("))
 
   for (i in seq_along(args)) {
     arg <- args[i]
@@ -448,8 +457,34 @@ write_rd <- function(
     dir.create(man_dir, recursive = TRUE)
   }
 
-  # Sanitize filename (replace . with - for internal functions)
-  filename <- gsub("^\\.", "dot-", name)
+  # Sanitize filename for Rd (like roxygen2)
+  # - Internal functions starting with . -> dot-name
+  # - Infix operators %X% -> grapes-X-grapes
+  filename <- name
+  if (grepl("^\\.", filename)) {
+    filename <- gsub("^\\.", "dot-", filename)
+  } else if (grepl("^%.*%$", filename)) {
+    # Encode infix operator: %||% -> grapes-or-or-grapes
+    # Only encode special characters, keep alphanumeric sequences intact
+    inner <- gsub("^%|%$", "", filename)
+    # Replace special characters with _WORD_ markers first
+    inner <- gsub("\\|", "_OR_", inner)
+    inner <- gsub("&", "_AND_", inner)
+    inner <- gsub("\\+", "_PLUS_", inner)
+    inner <- gsub("-", "_MINUS_", inner)
+    inner <- gsub("\\*", "_TIMES_", inner)
+    inner <- gsub("/", "_DIV_", inner)
+    inner <- gsub("<", "_LT_", inner)
+    inner <- gsub(">", "_GT_", inner)
+    inner <- gsub("=", "_EQ_", inner)
+    inner <- gsub("!", "_NOT_", inner)
+    # Convert markers to lowercase with - separators
+    inner <- gsub("_([A-Z]+)_", "-\\L\\1-", inner, perl = TRUE)
+    # Clean up multiple - and leading/trailing -
+    inner <- gsub("-+", "-", inner)
+    inner <- gsub("^-|-$", "", inner)
+    filename <- paste0("grapes-", inner, "-grapes")
+  }
   filepath <- file.path(man_dir, paste0(filename, ".Rd"))
 
   writeLines(content, filepath, useBytes = TRUE)
@@ -482,8 +517,9 @@ generate_all_rd <- function(
       block$line
     )
 
-    # Skip namespace-only blocks
-    if (block$type == "namespace_only") {
+    # Skip namespace-only blocks UNLESS they have @name (documentation pages)
+    # Pattern: #' Title\n#' @name foo\nNULL creates a standalone doc page
+    if (block$type == "namespace_only" && tags$name == ".namespace_only") {
       next
     }
 

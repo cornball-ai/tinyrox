@@ -14,4 +14,3 @@ SUPPORTED_TAGS
 All Supported Tags
 }
 \keyword{internal}
-\keyword{datasets}

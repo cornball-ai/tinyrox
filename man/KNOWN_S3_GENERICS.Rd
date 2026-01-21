@@ -14,4 +14,3 @@ KNOWN_S3_GENERICS
 List of base R S3 generics for auto-detection when @export is used.
 }
 \keyword{internal}
-\keyword{datasets}

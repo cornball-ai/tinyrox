@@ -119,9 +119,17 @@ parse_object_definition <- function(
   file,
   line_num
 ) {
+  # Get just the first line
+  first_line <- strsplit(text, "\n")[[1]][1]
+
+  # Skip indented definitions (likely methods inside nn_module/R6 classes)
+  # Top-level definitions start at column 1 (no leading whitespace)
+  # Methods inside class definitions are indented with 2+ spaces or tab
+  if (grepl("^(\\s{2,}|\\t)", first_line)) {
+    return(NULL)
+  }
+
   # Check for "_PACKAGE" directive (package documentation)
-  # Only check first line (text may be multi-line)
-  first_line <- strsplit(text, "\n") [[1]][1]
   if (grepl('^"_PACKAGE"$', trimws(first_line))) {
     return(list(
         name = "_PACKAGE",
@@ -132,22 +140,27 @@ parse_object_definition <- function(
 
   # Match: name <- or name =
   # Handles: foo <- function(...), foo <- value, foo = function(...)
-
-  # Get just the first line for name extraction
-  first_line <- strsplit(text, "\n") [[1]][1]
-
-  # Pattern for assignment
+  # Also handles backtick-quoted names: `%||%` <- function(...)
+  # Pattern for regular names
   pattern <- "^\\s*([a-zA-Z._][a-zA-Z0-9._]*)\\s*(<-|=)\\s*"
   match <- regexec(pattern, first_line)
 
-  if (match[[1]][1] == - 1) {
+  # Pattern for backtick-quoted names (like `%||%`)
+  backtick_pattern <- "^\\s*`([^`]+)`\\s*(<-|=)\\s*"
+  backtick_match <- regexec(backtick_pattern, first_line)
+
+  if (match[[1]][1] != -1) {
+    name <- regmatches(first_line, match)[[1]][2]
+    pattern_used <- pattern
+  } else if (backtick_match[[1]][1] != -1) {
+    name <- regmatches(first_line, backtick_match)[[1]][2]
+    pattern_used <- backtick_pattern
+  } else {
     return(NULL)
   }
 
-  name <- regmatches(first_line, match) [[1]][2]
-
   # Check if it's a function (look in full text for multi-line defs)
-  rest <- sub(pattern, "", text)
+  rest <- sub(pattern_used, "", text)
 
   if (grepl("^function\\s*\\(", rest)) {
     # It's a function - extract formals from potentially multi-line text

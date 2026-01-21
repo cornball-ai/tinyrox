@@ -14,4 +14,3 @@ SUPPORTED_DOC_TAGS
 Supported Documentation Tags
 }
 \keyword{internal}
-\keyword{datasets}
