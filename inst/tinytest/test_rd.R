@@ -4,7 +4,7 @@
 expect_equal(rhydrogen:::escape_rd("hello"), "hello")
 expect_equal(rhydrogen:::escape_rd("100%"), "100\\%")
 expect_equal(rhydrogen:::escape_rd("{test}"), "\\{test\\}")
-expect_equal(rhydrogen:::escape_rd("a\\b"), "a\\\\b")
+expect_equal(rhydrogen:::escape_rd("a\\b"), "a\\b")
 
 # Test generate_rd
 tags <- list(
