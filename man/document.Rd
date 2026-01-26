@@ -8,10 +8,12 @@ document(path = ".", namespace = c("overwrite", "append", "none"))
 \arguments{
 \item{path}{Path to package root directory. Default is current directory.}
 
-\item{namespace}{How to handle NAMESPACE generation. One of:
-- "overwrite": Fully regenerate NAMESPACE (default)
-- "append": Insert between ## tinyrox start/end markers
-- "none": Don't modify NAMESPACE}
+\item{namespace}{How to handle NAMESPACE generation. One of
+\describe{
+\item{"overwrite"}{Fully regenerate NAMESPACE (default)}
+\item{"append"}{Insert between ## tinyrox start/end markers}
+\item{"none"}{Don't modify NAMESPACE}
+}}
 }
 \value{
 Invisibly returns a list with:
