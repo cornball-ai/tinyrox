@@ -4,11 +4,12 @@
 #' comments and generates Rd files and NAMESPACE.
 #'
 #' @param path Path to package root directory. Default is current directory.
-#' @param namespace How to handle NAMESPACE generation. One of:
-#'   - "overwrite": Fully regenerate NAMESPACE (default)
-#'   - "append": Insert between ## rhydrogen start/end markers
-#'   - "none": Don't modify NAMESPACE
-#'
+#' @param namespace How to handle NAMESPACE generation. One of
+#' \describe{
+#'   \item{"overwrite"}{Fully regenerate NAMESPACE (default)}
+#'   \item{"append"}{Insert between ## rhydrogen start/end markers}
+#'   \item{"none"}{Don't modify NAMESPACE}
+#' }
 #' @return Invisibly returns a list with:
 #'   - rd_files: character vector of generated Rd file paths
 #'   - namespace: path to NAMESPACE file (or NULL if mode="none")
