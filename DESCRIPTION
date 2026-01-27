@@ -3,13 +3,11 @@ Title: Minimal R Documentation Generator
 Version: 0.1.0
 Authors@R:
     person("Troy", "Hernandez", email = "troy@cornball.ai", role = c("aut", "cre"))
-Description: A deterministic, dependency-light documentation generator for R
+Description: A deterministic, dependency-free documentation generator for R
     packages. Generates valid Rd files and NAMESPACE from roxygen2-style comments
     using only base R. Supports a strict subset of tags with no markdown parsing,
     no inference magic, and explicit-only behavior.
 License: GPL-3
 Encoding: UTF-8
-Imports:
-    curl
 Suggests:
     tinytest
