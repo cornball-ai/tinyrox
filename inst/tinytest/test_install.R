@@ -19,17 +19,17 @@ writeLines("add <- function(x, y) x + y", file.path(tmp_pkg, "R", "add.R"))
 writeLines("export(add)", file.path(tmp_pkg, "NAMESPACE"))
 
 # Test quiet install
-result <- rhydrogen::install(tmp_pkg, quiet = TRUE)
-#expect_true(result)
+result <- tinyrox::install(tmp_pkg, quiet = TRUE)
+expect_true(result)
 
 # Test load_all
-files <- rhydrogen::load_all(tmp_pkg, quiet = TRUE)
+files <- tinyrox::load_all(tmp_pkg, quiet = TRUE)
 expect_equal(length(files), 1)
-expect_true(any(grepl("rhydrogen:testpkg", search())))
+expect_true(any(grepl("tinyrox:testpkg", search())))
 
 # Clean up search path
-if ("rhydrogen:testpkg" %in% search()) {
-  detach("rhydrogen:testpkg", character.only = TRUE)
+if ("tinyrox:testpkg" %in% search()) {
+  detach("tinyrox:testpkg", character.only = TRUE)
 }
 
 # Clean up temp package

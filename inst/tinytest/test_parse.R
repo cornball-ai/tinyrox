@@ -19,7 +19,7 @@ writeLines(c(
 ), tmp)
 
 # Test parse_file
-blocks <- rhydrogen:::parse_file(tmp)
+blocks <- tinyrox:::parse_file(tmp)
 expect_equal(length(blocks), 2)
 
 # Test first block
@@ -33,15 +33,15 @@ expect_equal(blocks[[2]]$object, ".helper")
 expect_equal(blocks[[2]]$type, "function")
 
 # Test parse_formals_text - returns list with names and usage
-result <- rhydrogen:::parse_formals_text("x, y")
+result <- tinyrox:::parse_formals_text("x, y")
 expect_equal(result$names, c("x", "y"))
 expect_equal(result$usage, c("x", "y"))
 
-result <- rhydrogen:::parse_formals_text("x, y = 1")
+result <- tinyrox:::parse_formals_text("x, y = 1")
 expect_equal(result$names, c("x", "y"))
 expect_equal(result$usage, c("x", "y = 1"))
 
-result <- rhydrogen:::parse_formals_text("")
+result <- tinyrox:::parse_formals_text("")
 expect_equal(result$names, character())
 
-expect_equal(rhydrogen:::parse_formals_text("...")$names, "...")
+expect_equal(tinyrox:::parse_formals_text("...")$names, "...")

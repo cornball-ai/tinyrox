@@ -148,7 +148,7 @@ check_win_devel <- function(
   r_version <- match.arg(r_version)
 
   # Build the package
-  tmp_dir <- tempfile("rhydrogen_winbuild_")
+  tmp_dir <- tempfile("tinyrox_winbuild_")
   dir.create(tmp_dir)
   on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
 
@@ -230,7 +230,7 @@ submit_cran <- function(
   }
 
   # Build the package
-  tmp_dir <- tempfile("rhydrogen_cran_")
+  tmp_dir <- tempfile("tinyrox_cran_")
   dir.create(tmp_dir)
   on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
 

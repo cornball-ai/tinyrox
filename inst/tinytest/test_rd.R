@@ -1,10 +1,10 @@
 # Tests for rd.R
 
 # Test escape_rd
-expect_equal(rhydrogen:::escape_rd("hello"), "hello")
-expect_equal(rhydrogen:::escape_rd("100%"), "100\\%")
-expect_equal(rhydrogen:::escape_rd("{test}"), "\\{test\\}")
-expect_equal(rhydrogen:::escape_rd("a\\b"), "a\\b")
+expect_equal(tinyrox:::escape_rd("hello"), "hello")
+expect_equal(tinyrox:::escape_rd("100%"), "100\\%")
+expect_equal(tinyrox:::escape_rd("{test}"), "\\{test\\}")
+expect_equal(tinyrox:::escape_rd("a\\b"), "a\\b")
 
 # Test generate_rd
 tags <- list(
@@ -23,7 +23,7 @@ tags <- list(
   noRd = FALSE
 )
 
-rd <- rhydrogen:::generate_rd(tags, list(names = c("x", "y"), usage = c("x", "y")))
+rd <- tinyrox:::generate_rd(tags, list(names = c("x", "y"), usage = c("x", "y")))
 
 # Check required sections
 expect_true(grepl("\\\\name\\{add\\}", rd))
@@ -48,14 +48,14 @@ expect_true(grepl("add\\(x, y\\)", rd))
 # Test with aliases
 tags_alias <- tags
 tags_alias$aliases <- c("plus", "sum2")
-rd_alias <- rhydrogen:::generate_rd(tags_alias, list(names = c("x", "y"), usage = c("x", "y")))
+rd_alias <- tinyrox:::generate_rd(tags_alias, list(names = c("x", "y"), usage = c("x", "y")))
 expect_true(grepl("\\\\alias\\{plus\\}", rd_alias))
 expect_true(grepl("\\\\alias\\{sum2\\}", rd_alias))
 
 # Test with keywords
 tags_kw <- tags
 tags_kw$keywords <- c("internal", "math")
-rd_kw <- rhydrogen:::generate_rd(tags_kw, list(names = c("x", "y"), usage = c("x", "y")))
+rd_kw <- tinyrox:::generate_rd(tags_kw, list(names = c("x", "y"), usage = c("x", "y")))
 expect_true(grepl("\\\\keyword\\{internal\\}", rd_kw))
 expect_true(grepl("\\\\keyword\\{math\\}", rd_kw))
 
@@ -79,7 +79,7 @@ child_tags <- list(
 all_tags <- list(base_func = source_tags, child_func = child_tags)
 formals <- list(names = c("x", "y"), usage = c("x", "y"))  # Only has x and y
 
-resolved <- rhydrogen:::resolve_inherit_params(child_tags, all_tags, formals)
+resolved <- tinyrox:::resolve_inherit_params(child_tags, all_tags, formals)
 
 # Should inherit x (in formals, not documented)
 expect_equal(resolved$params$x, "The x parameter")

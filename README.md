@@ -1,21 +1,21 @@
-# rhydrogen
+# tinyrox
 
 Minimal R documentation generator - base R only, no magic.
 
 ## What it does
 
-rhydrogen is a lightweight alternative to roxygen2 that generates valid `.Rd` files and `NAMESPACE` from `#'` comments using only base R. No dependencies.
+tinyrox is a lightweight alternative to roxygen2 that generates valid `.Rd` files and `NAMESPACE` from `#'` comments using only base R. No dependencies.
 
 ## Installation
 
 ```r
-remotes::install_github("cornball-ai/rhydrogen")
+remotes::install_github("cornball-ai/tinyrox")
 ```
 
 ## Usage
 
 ```r
-library(rhydrogen)
+library(tinyrox)
 
 # Generate docs and NAMESPACE
 document()
@@ -85,7 +85,7 @@ add <- function(x, y) {
 
 ## Philosophy
 
-rhydrogen follows the [tinyverse](https://www.tinyverse.org) philosophy:
+tinyrox follows the [tinyverse](https://www.tinyverse.org) philosophy:
 
 > Dependencies have real costs. Each dependency is an invitation to break your project.
 
@@ -96,7 +96,7 @@ rhydrogen follows the [tinyverse](https://www.tinyverse.org) philosophy:
 - Deterministic output - same input = same output
 - Fail fast on unknown tags
 
-**What rhydrogen does NOT do:**
+**What tinyrox does NOT do:**
 - Markdown parsing
 - Automatic dependency inference
 - `@inheritParams` or other inheritance
@@ -109,13 +109,13 @@ rhydrogen follows the [tinyverse](https://www.tinyverse.org) philosophy:
 # Edit R/*.R files with #' comments
 
 # Regenerate docs
-rhydrogen::document()
+tinyrox::document()
 
 # Test interactively
-rhydrogen::load_all()
+tinyrox::load_all()
 
 # Install and test
-rhydrogen::install()
+tinyrox::install()
 tinytest::test_package("mypkg")
 ```
 

@@ -1,12 +1,12 @@
 #' Generate Documentation for an R Package
 #'
-#' Main function for rhydrogen. Parses R source files for documentation
+#' Main function for tinyrox. Parses R source files for documentation
 #' comments and generates Rd files and NAMESPACE.
 #'
 #' @param path Path to package root directory. Default is current directory.
 #' @param namespace How to handle NAMESPACE generation. One of:
 #'   - "overwrite": Fully regenerate NAMESPACE (default)
-#'   - "append": Insert between ## rhydrogen start/end markers
+#'   - "append": Insert between ## tinyrox start/end markers
 #'   - "none": Don't modify NAMESPACE
 #'
 #' @return Invisibly returns a list with:
@@ -150,7 +150,7 @@ check <- function(
   pkg_version <- desc[1, "Version"]
 
   # Create temp directory for build/check
-  tmp_dir <- tempfile("rhydrogen_check_")
+  tmp_dir <- tempfile("tinyrox_check_")
   dir.create(tmp_dir)
   on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
 
@@ -315,7 +315,7 @@ load_all <- function(
 
   # Attach the environment
   # Use a name that won't conflict
-  env_name <- paste0("rhydrogen:", basename(normalizePath(path)))
+  env_name <- paste0("tinyrox:", basename(normalizePath(path)))
 
   # Detach if already attached
   if (env_name %in% search()) {
