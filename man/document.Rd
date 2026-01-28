@@ -3,7 +3,11 @@
 \alias{document}
 \title{Generate Documentation for an R Package}
 \usage{
-document(path = ".", namespace = c("overwrite", "append", "none"))
+document(
+  path = ".",
+  namespace = c("overwrite", "append", "none"),
+  cran_check = TRUE
+)
 }
 \arguments{
 \item{path}{Path to package root directory. Default is current directory.}
@@ -14,6 +18,9 @@ document(path = ".", namespace = c("overwrite", "append", "none"))
 \item{"append"}{Insert between ## tinyrox start/end markers}
 \item{"none"}{Don't modify NAMESPACE}
 }}
+
+\item{cran_check}{Check DESCRIPTION for CRAN compliance issues
+(unquoted package names, missing web service links). Default TRUE.}
 }
 \value{
 Invisibly returns a list with:
@@ -34,5 +41,8 @@ document(namespace = "append")
 
 # Document without modifying NAMESPACE
 document(namespace = "none")
+
+# Skip CRAN compliance check
+document(cran_check = FALSE)
 }
 }

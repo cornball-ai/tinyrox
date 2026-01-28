@@ -49,11 +49,16 @@ clean()
 | `@return` | Return value |
 | `@value` | Alias for `@return` |
 | `@examples` | Code examples (verbatim) |
+| `@example path` | Include example from file |
 | `@seealso` | Cross-references |
 | `@references` | Citations |
+| `@section Title:` | Custom section |
+| `@author` | Author information |
+| `@family name` | Related functions |
 | `@aliases` | Additional topic aliases |
 | `@keywords` | Rd keywords (e.g., `internal`) |
 | `@name` | Explicit topic name |
+| `@inheritParams fn` | Copy params from another function |
 | `@noRd` | Skip Rd generation |
 
 ### Namespace
@@ -83,6 +88,36 @@ add <- function(x, y) {
 }
 ```
 
+## CRAN Compliance Checking
+
+tinyrox includes automated CRAN compliance checks:
+
+```r
+# Check DESCRIPTION for common issues
+check_description_cran()
+# Warns about: unquoted package names, missing web service links
+
+# Check R code for CRAN policy violations
+check_code_cran()
+# Warns about: T/F, print()/cat(), .GlobalEnv, installed.packages(), etc.
+
+# Run all checks
+check_cran()
+
+# Auto-fix DESCRIPTION quoting issues
+fix_description_cran()
+```
+
+Issues detected:
+- Unquoted package/software names in Title/Description
+- Missing web service links for packages like hfhub, gh
+- `T`/`F` instead of `TRUE`/`FALSE`
+- `print()`/`cat()` instead of `message()`
+- `installed.packages()` usage
+- `.GlobalEnv` modifications
+- `setwd()` without `on.exit()` restoration
+- Hardcoded `set.seed()` without parameter
+
 ## Philosophy
 
 tinyrox follows the [tinyverse](https://www.tinyverse.org) philosophy:
@@ -99,7 +134,6 @@ tinyrox follows the [tinyverse](https://www.tinyverse.org) philosophy:
 **What tinyrox does NOT do:**
 - Markdown parsing
 - Automatic dependency inference
-- `@inheritParams` or other inheritance
 - `@rdname` grouping magic
 - pkgdown integration
 
