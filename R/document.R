@@ -32,53 +32,50 @@
 #' # Skip CRAN compliance check
 #' document(cran_check = FALSE)
 #' }
-document <- function(
-  path = ".",
-  namespace = c("overwrite", "append", "none"),
-  cran_check = TRUE
-) {
-  namespace <- match.arg(namespace)
+document <- function (path = ".", namespace = c("overwrite", "append", "none"),
+                      cran_check = TRUE) {
+    namespace <- match.arg(namespace)
 
-  # Validate path
-  if (!file.exists(file.path(path, "DESCRIPTION"))) {
-    stop("No DESCRIPTION file found in ", path,
-      ". Is this an R package?", call. = FALSE)
-  }
+    # Validate path
+    if (!file.exists(file.path(path, "DESCRIPTION"))) {
+        stop("No DESCRIPTION file found in ", path,
+            ". Is this an R package?", call. = FALSE)
+    }
 
-  # Check CRAN compliance
-  if (cran_check) {
-    check_description_cran(path)
-  }
+    # Check CRAN compliance
+    if (cran_check) {
+        check_description_cran(path)
+    }
 
-  # Parse all R files
-  message("Parsing R files...")
-  blocks <- parse_package(path)
+    # Parse all R files
+    message("Parsing R files...")
+    blocks <- parse_package(path)
 
-  if (length(blocks) == 0) {
-    message("No documentation blocks found.")
-    return(invisible(list(rd_files = character(), namespace = NULL)))
-  }
+    if (length(blocks) == 0) {
+        message("No documentation blocks found.")
+        return(invisible(list(rd_files = character(), namespace = NULL)))
+    }
 
-  message("Found ", length(blocks), " documentation block(s).")
+    message("Found ", length(blocks), " documentation block(s).")
 
-  # Generate Rd files
-  message("Generating Rd files...")
-  rd_files <- generate_all_rd(blocks, path)
-  message("Generated ", length(rd_files), " Rd file(s).")
+    # Generate Rd files
+    message("Generating Rd files...")
+    rd_files <- generate_all_rd(blocks, path)
+    message("Generated ", length(rd_files), " Rd file(s).")
 
-  # Generate NAMESPACE
-  ns_file <- NULL
-  if (namespace != "none") {
-    message("Generating NAMESPACE...")
-    ns_content <- generate_namespace(blocks)
-    ns_file <- write_namespace(ns_content, path, namespace)
-    message("Updated NAMESPACE.")
-  }
+    # Generate NAMESPACE
+    ns_file <- NULL
+    if (namespace != "none") {
+        message("Generating NAMESPACE...")
+        ns_content <- generate_namespace(blocks)
+        ns_file <- write_namespace(ns_content, path, namespace)
+        message("Updated NAMESPACE.")
+    }
 
-  invisible(list(
-      rd_files = rd_files,
-      namespace = ns_file
-    ))
+    invisible(list(
+            rd_files = rd_files,
+            namespace = ns_file
+        ))
 }
 
 #' Clean Generated Files
@@ -95,27 +92,25 @@ document <- function(
 #' clean()
 #' clean(namespace = TRUE)
 #' }
-clean <- function(
-  path = ".",
-  namespace = FALSE
-) {
-  man_dir <- file.path(path, "man")
+clean <- function (path = ".", namespace = FALSE) {
+    man_dir <- file.path(path, "man")
 
-  if (dir.exists(man_dir)) {
-    rd_files <- list.files(man_dir, pattern = "\\.Rd$", full.names = TRUE)
-    if (length(rd_files) > 0) {
-      file.remove(rd_files)
-      message("Removed ", length(rd_files), " Rd file(s).")
+    if (dir.exists(man_dir)) {
+        rd_files <- list.files(man_dir, pattern = "\\.Rd$", full.names = TRUE)
+        if (length(rd_files) > 0) {
+            file.remove(rd_files)
+            message("Removed ", length(rd_files), " Rd file(s).")
+        }
     }
-  }
 
-  if (namespace) {
-    ns_file <- file.path(path, "NAMESPACE")
-    if (file.exists(ns_file)) {
-      file.remove(ns_file)
-      message("Removed NAMESPACE.")
+    if (namespace) {
+        ns_file <- file.path(path, "NAMESPACE")
+        if (file.exists(ns_file)) {
+            file.remove(ns_file)
+            message("Removed NAMESPACE.")
+        }
     }
-  }
 
-  invisible(NULL)
+    invisible(NULL)
 }
+
