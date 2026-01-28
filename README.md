@@ -4,7 +4,7 @@ Minimal R documentation generator - base R only, no magic.
 
 ## What it does
 
-tinyrox is a lightweight alternative to roxygen2 that generates valid `.Rd` files and `NAMESPACE` from `#'` comments using only base R. No dependencies.
+tinyrox is a lightweight alternative to roxygen2 that generates valid `.Rd` files and `NAMESPACE` from `#'` comments using only base R.
 
 ## Installation
 
@@ -17,23 +17,14 @@ remotes::install_github("cornball-ai/tinyrox")
 ```r
 library(tinyrox)
 
-# Generate docs and NAMESPACE
+# Generate man/*.Rd and NAMESPACE from R/*.R
 document()
 
-# Install package (quiet by default)
-install()
-
-# Load for interactive development
-load_all()
-
-# Run tests
-tinytest::test_package("mypkg")
-
-# Validate generated files
-check()
-
-# Clean generated files
+# Clean generated files (man/, NAMESPACE)
 clean()
+
+# Check for common CRAN policy issues
+check_cran()
 ```
 
 ## Supported Tags
@@ -125,7 +116,7 @@ tinyrox follows the [tinyverse](https://www.tinyverse.org) philosophy:
 > Dependencies have real costs. Each dependency is an invitation to break your project.
 
 **Design principles:**
-- Base R only - no dependencies
+- Minimize dependencies (tinyrox has none)
 - Explicit over implicit - no inference magic
 - Strict subset of tags - not everything roxygen2 does
 - Deterministic output - same input = same output
@@ -139,18 +130,36 @@ tinyrox follows the [tinyverse](https://www.tinyverse.org) philosophy:
 
 ## Development Workflow
 
+tinyrox is part of the tinyverse toolchain for R package development:
+
+| Package | Purpose |
+|---------|---------|
+| **tinyrox** | Documentation & NAMESPACE |
+| **tinypkgr** | install, load_all, check, build |
+| **tinytest** | Unit testing |
+| **fyi** | Rd to markdown (LLM context, static sites) |
+
 ```r
 # Edit R/*.R files with #' comments
 
 # Regenerate docs
 tinyrox::document()
 
-# Test interactively
-tinyrox::load_all()
+# Load for interactive development
+tinypkgr::load_all()
 
 # Install and test
-tinyrox::install()
+tinypkgr::install()
 tinytest::test_package("mypkg")
+
+# Full R CMD check
+tinypkgr::check()
+```
+
+Or from the command line with littler:
+
+```bash
+r -e 'tinyrox::document(); tinypkgr::install(); tinytest::test_package("mypkg")'
 ```
 
 ## License
