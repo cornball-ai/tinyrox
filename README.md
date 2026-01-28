@@ -145,11 +145,11 @@ tinyrox is part of the tinyverse toolchain for R package development:
 # Regenerate docs
 tinyrox::document()
 
-# Load for interactive development
+# Load for interactive development (no install)
 tinypkgr::load_all()
 
-# Install and test
-tinypkgr::install()
+# Install and reload in current session
+tinypkgr::reload()
 tinytest::test_package("mypkg")
 
 # Full R CMD check
