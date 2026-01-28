@@ -17,3 +17,9 @@ List with validation results and optionally fixed text
 Validates Title and Description fields for common CRAN issues:
 unquoted package names, missing web service links, etc.
 }
+\examples{
+\dontrun{
+check_description_cran()
+check_description_cran("path/to/package")
+}
+}

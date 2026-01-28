@@ -43,6 +43,11 @@ KNOWN_SOFTWARE_NAMES <- c(
 #' @return List with validation results and optionally fixed text
 #'
 #' @export
+#' @examples
+#' \dontrun{
+#' check_description_cran()
+#' check_description_cran("path/to/package")
+#' }
 check_description_cran <- function (path = ".", fix = FALSE) {
     desc_file <- file.path(path, "DESCRIPTION")
     if (!file.exists(desc_file)) {
@@ -261,6 +266,11 @@ escape_regex <- function (x) {
 #' @return Invisibly returns TRUE if changes were made
 #'
 #' @export
+#' @examples
+#' \dontrun{
+#' fix_description_cran()
+#' fix_description_cran(backup = FALSE)
+#' }
 fix_description_cran <- function (path = ".", backup = TRUE) {
     desc_file <- file.path(path, "DESCRIPTION")
     if (!file.exists(desc_file)) {
@@ -324,6 +334,11 @@ fix_description_cran <- function (path = ".", backup = TRUE) {
 #' @return List with issues found
 #'
 #' @export
+#' @examples
+#' \dontrun{
+#' check_code_cran()
+#' check_code_cran("path/to/package")
+#' }
 check_code_cran <- function (path = ".") {
     r_dir <- file.path(path, "R")
     if (!dir.exists(r_dir)) {
@@ -464,23 +479,138 @@ check_code_lines <- function (lines, filename) {
 #' @return List with all issues
 #'
 #' @export
+#' @examples
+#' \dontrun{
+#' check_cran()
+#' check_cran("path/to/package")
+#' }
 check_cran <- function (path = ".") {
     message("Checking CRAN compliance...")
 
     desc_result <- check_description_cran(path)
     code_result <- check_code_cran(path)
+    example_result <- check_examples_cran(path)
 
     all_issues <- list(
         description = desc_result$issues,
-        code = code_result
+        code = code_result,
+        examples = example_result
     )
 
-    has_issues <- desc_result$has_issues || length(code_result) > 0
+    has_issues <- desc_result$has_issues || length(code_result) > 0 ||
+    length(example_result) > 0
 
     if (!has_issues) {
         message("No CRAN compliance issues found")
     }
 
     invisible(all_issues)
+}
+
+#' Check for Missing Examples
+#'
+#' Identifies exported functions that lack examples in their documentation.
+#'
+#' @param path Path to package root directory
+#' @return Character vector of function names missing examples
+#'
+#' @export
+#' @examples
+#' \dontrun{
+#' check_examples_cran()
+#' check_examples_cran("path/to/package")
+#' }
+check_examples_cran <- function (path = ".") {
+    r_dir <- file.path(path, "R")
+    if (!dir.exists(r_dir)) {
+        stop("No R/ directory found in ", path, call. = FALSE)
+    }
+
+    r_files <- list.files(r_dir, pattern = "\\.R$", full.names = TRUE,
+        ignore.case = TRUE)
+
+    if (length(r_files) == 0) {
+        return(character())
+    }
+
+    missing_examples <- character()
+
+    for (file in r_files) {
+        content <- readLines(file, warn = FALSE)
+        file_missing <- find_exports_without_examples(content)
+        missing_examples <- c(missing_examples, file_missing)
+    }
+
+    if (length(missing_examples) > 0) {
+        warning("CRAN: Exported functions without examples: ",
+            paste(missing_examples, collapse = ", "),
+            call. = FALSE)
+    }
+
+    invisible(missing_examples)
+}
+
+#' Find Exported Functions Without Examples
+#'
+#' Parses R file content to find @export tags without @examples.
+#'
+#' @param lines Character vector of file lines
+#' @return Character vector of function names missing examples
+find_exports_without_examples <- function (lines) {
+    missing <- character()
+    in_doc_block <- FALSE
+    has_export <- FALSE
+    has_examples <- FALSE
+    block_start <- 0
+
+    for (i in seq_along(lines)) {
+        line <- lines[i]
+
+        # Start of doc block
+        if (grepl("^#'", line)) {
+            if (!in_doc_block) {
+                in_doc_block <- TRUE
+                has_export <- FALSE
+                has_examples <- FALSE
+                block_start <- i
+            }
+
+            # Check for export tag
+            if (grepl("^#'\\s*@export", line)) {
+                has_export <- TRUE
+            }
+
+            # Check for examples tag
+            if (grepl("^#'\\s*@examples", line)) {
+                has_examples <- TRUE
+            }
+        } else if (in_doc_block) {
+            # End of doc block - check if it's a function definition
+            in_doc_block <- FALSE
+
+            if (has_export && !has_examples) {
+                # Try to get function name from next non-blank line
+                func_name <- extract_function_name(line)
+                if (!is.null(func_name)) {
+                    missing <- c(missing, func_name)
+                }
+            }
+        }
+    }
+
+    missing
+}
+
+#' Extract Function Name from Definition Line
+#'
+#' @param line Code line potentially containing function definition
+#' @return Function name or NULL
+extract_function_name <- function (line) {
+    # Match "name <- function" or "name = function"
+    match <- regmatches(line, regexec("^([A-Za-z_.][A-Za-z0-9_.]*)\\s*(<-|=)\\s*function", line)) [[1]]
+    if (length(match) >= 2) {
+        return(match[2])
+    }
+    NULL
 }
 

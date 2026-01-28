@@ -14,3 +14,9 @@ List with issues found
 \description{
 Scans R files for common CRAN policy violations.
 }
+\examples{
+\dontrun{
+check_code_cran()
+check_code_cran("path/to/package")
+}
+}

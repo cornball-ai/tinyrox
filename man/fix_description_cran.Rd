@@ -16,3 +16,9 @@ Invisibly returns TRUE if changes were made
 \description{
 Automatically fixes common CRAN issues in DESCRIPTION.
 }
+\examples{
+\dontrun{
+fix_description_cran()
+fix_description_cran(backup = FALSE)
+}
+}

@@ -19,8 +19,8 @@ document(
 \item{"none"}{Don't modify NAMESPACE}
 }}
 
-\item{cran_check}{Check DESCRIPTION for CRAN compliance issues
-(unquoted package names, missing web service links). Default TRUE.}
+\item{cran_check}{Run CRAN compliance checks (DESCRIPTION quoting,
+web service links, code issues, missing examples). Default TRUE.}
 }
 \value{
 Invisibly returns a list with:

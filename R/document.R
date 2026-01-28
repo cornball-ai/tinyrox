@@ -10,8 +10,8 @@
 #'   \item{"append"}{Insert between ## tinyrox start/end markers}
 #'   \item{"none"}{Don't modify NAMESPACE}
 #' }
-#' @param cran_check Check DESCRIPTION for CRAN compliance issues
-#'   (unquoted package names, missing web service links). Default TRUE.
+#' @param cran_check Run CRAN compliance checks (DESCRIPTION quoting,
+#'   web service links, code issues, missing examples). Default TRUE.
 #' @return Invisibly returns a list with:
 #'   - rd_files: character vector of generated Rd file paths
 #'   - namespace: path to NAMESPACE file (or NULL if mode="none")
@@ -44,7 +44,7 @@ document <- function (path = ".", namespace = c("overwrite", "append", "none"),
 
     # Check CRAN compliance
     if (cran_check) {
-        check_description_cran(path)
+        check_cran(path)
     }
 
     # Parse all R files

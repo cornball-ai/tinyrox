@@ -14,3 +14,9 @@ List with all issues
 \description{
 Runs all CRAN compliance checks (DESCRIPTION + code).
 }
+\examples{
+\dontrun{
+check_cran()
+check_cran("path/to/package")
+}
+}

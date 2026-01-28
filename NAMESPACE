@@ -3,6 +3,7 @@
 export(check_code_cran)
 export(check_cran)
 export(check_description_cran)
+export(check_examples_cran)
 export(clean)
 export(document)
 export(fix_description_cran)
