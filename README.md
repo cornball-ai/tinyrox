@@ -164,4 +164,4 @@ r -e 'tinyrox::document(); tinypkgr::install(); tinytest::test_package("mypkg")'
 
 ## License
 
-MIT
+GPL-3

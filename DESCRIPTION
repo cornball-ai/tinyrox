@@ -8,6 +8,8 @@ Description: A deterministic, dependency-free documentation generator for R
     using only base R. Supports a strict subset of tags with no markdown parsing,
     no inference magic, and explicit-only behavior.
 License: GPL-3
+URL: https://github.com/cornball-ai/tinyrox
+BugReports: https://github.com/cornball-ai/tinyrox/issues
 Encoding: UTF-8
 Suggests:
     tinytest
