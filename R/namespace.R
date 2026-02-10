@@ -13,7 +13,13 @@ KNOWN_S3_GENERICS <- c(
     "is.na", "is.null", "is.finite", "is.infinite", "is.nan",
     # Subsetting
     "[", "[[", "$", "[<-", "[[<-", "$<-",
-    # Math/ops
+    # Arithmetic operators
+    "+", "-", "*", "/", "^", "%%", "%/%",
+    # Comparison operators
+    "==", "!=", "<", "<=", ">=", ">",
+    # Logical operators
+    "&", "|", "!",
+    # Math/ops group generics
     "mean", "median", "quantile", "range", "sum", "prod", "min", "max",
     "Math", "Ops", "Summary", "Complex",
     # Dimensions
@@ -124,7 +130,15 @@ generate_namespace <- function (blocks) {
             vapply(s3methods, function (x) paste(x$generic, x$class), character(1))
         )]
         for (s3m in s3methods) {
-            lines <- c(lines, paste0("S3method(", s3m$generic, ",", s3m$class, ")"))
+            gen <- s3m$generic
+            cls <- s3m$class
+            if (!grepl("^[a-zA-Z._][a-zA-Z0-9._]*$", gen)) {
+                gen <- paste0('"', gen, '"')
+            }
+            if (!grepl("^[a-zA-Z._][a-zA-Z0-9._]*$", cls)) {
+                cls <- paste0('"', cls, '"')
+            }
+            lines <- c(lines, paste0("S3method(", gen, ",", cls, ")"))
         }
     }
 

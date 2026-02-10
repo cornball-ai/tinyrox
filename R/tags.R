@@ -16,6 +16,7 @@ SUPPORTED_DOC_TAGS <- c(
     "keywords",
     "family",
     "name",
+    "rdname",
     "noRd",
     "inheritParams",
     "section",
@@ -60,6 +61,7 @@ parse_tags <- function (lines, object_name, file = NULL, line_num = NULL) {
         keywords = character(),
         family = NULL,
         name = object_name,
+        rdname = NULL,
         noRd = FALSE,
         export = FALSE,
         exportS3Method = NULL,
@@ -241,6 +243,9 @@ save_tag <- function (result, tag, arg, accumulator, file, line_num) {
         },
         "name" = {
             result$name <- value
+        },
+        "rdname" = {
+            result$rdname <- value
         },
         "noRd" = {
             result$noRd <- TRUE

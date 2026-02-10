@@ -28,7 +28,7 @@ r -e 'tinyrox::document()'
 ## Supported Tags
 
 ### Documentation
-`@title`, `@description`, `@details`, `@param`, `@return`, `@value`, `@examples`, `@seealso`, `@references`, `@aliases`, `@keywords`, `@name`, `@noRd`
+`@title`, `@description`, `@details`, `@param`, `@return`, `@value`, `@examples`, `@seealso`, `@references`, `@aliases`, `@keywords`, `@name`, `@rdname`, `@noRd`
 
 ### Namespace
 `@export`, `@exportS3Method`, `@import`, `@importFrom`, `@useDynLib`
@@ -37,7 +37,6 @@ r -e 'tinyrox::document()'
 
 - Markdown parsing
 - `@inheritParams` or inheritance
-- `@rdname` grouping
 - Automatic dependency inference
 - pkgdown integration
 

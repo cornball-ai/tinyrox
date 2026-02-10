@@ -477,6 +477,186 @@ write_rd <- function(
     filepath
 }
 
+#' Generate Rd Content for Grouped Blocks (Multiple @rdname Entries)
+#'
+#' Merges multiple documentation blocks that share an @rdname topic
+#' into a single .Rd file. The primary block (whose name matches the
+#' topic) provides title/description; all blocks contribute usage/params.
+#'
+#' @param topic Topic name (the @rdname value).
+#' @param entries List of list(tags, block) pairs sharing this topic.
+#' @param all_tags All parsed tags (for @inheritParams resolution).
+#' @return Character string of merged Rd content.
+#' @keywords internal
+generate_rd_grouped <- function(topic, entries, all_tags) {
+    lines <- character()
+
+    # Header
+    lines <- c(lines, "% tinyrox says don't edit this manually, but it can't stop you!")
+
+    # Find primary block: whose tags$name matches the topic name
+    primary_idx <- NULL
+    for (i in seq_along(entries)) {
+        if (entries[[i]]$tags$name == topic) {
+            primary_idx <- i
+            break
+        }
+    }
+    if (is.null(primary_idx)) primary_idx <- 1L
+    primary <- entries[[primary_idx]]
+
+    # \name{} - topic name
+    lines <- c(lines, paste0("\\name{", escape_rd(topic), "}"))
+
+    # \alias{} - all function names + explicit @aliases
+    aliases_seen <- character()
+    for (entry in entries) {
+        nm <- entry$tags$name
+        if (!nm %in% aliases_seen) {
+            lines <- c(lines, paste0("\\alias{", escape_rd(nm), "}"))
+            aliases_seen <- c(aliases_seen, nm)
+        }
+        for (alias in entry$tags$aliases) {
+            if (!alias %in% aliases_seen) {
+                lines <- c(lines, paste0("\\alias{", escape_rd(alias), "}"))
+                aliases_seen <- c(aliases_seen, alias)
+            }
+        }
+    }
+
+    # \title{} - from primary
+    title <- if (!is.null(primary$tags$title)) primary$tags$title else topic
+    lines <- c(lines, paste0("\\title{", escape_rd(title), "}"))
+
+    # \usage{} - one format_usage() per function block
+    usage_lines <- character()
+    for (entry in entries) {
+        if (!is.null(entry$block$formals)) {
+            usage_lines <- c(usage_lines,
+                escape_rd(format_usage(entry$tags$name, entry$block$formals$usage)))
+        }
+    }
+    if (length(usage_lines) > 0) {
+        lines <- c(lines, "\\usage{")
+        lines <- c(lines, paste(usage_lines, collapse = "\n\n"))
+        lines <- c(lines, "}")
+    }
+
+    # \arguments{} - merged params (first definition wins), ordered by formals
+    merged_params <- list()
+    all_formal_names <- character()
+    for (entry in entries) {
+        # Resolve @inheritParams per entry
+        etags <- entry$tags
+        if (length(etags$inheritParams) > 0) {
+            etags <- resolve_inherit_params(etags, all_tags, entry$block$formals)
+        }
+        if (!is.null(entry$block$formals)) {
+            all_formal_names <- c(all_formal_names, entry$block$formals$names)
+        }
+        for (pname in names(etags$params)) {
+            if (is.null(merged_params[[pname]])) {
+                merged_params[[pname]] <- etags$params[[pname]]
+            }
+        }
+    }
+    if (length(merged_params) > 0) {
+        # Order: formals order (unique, preserving first occurrence), then any extras
+        all_formal_names <- unique(all_formal_names)
+        param_order <- c(
+            intersect(all_formal_names, names(merged_params)),
+            setdiff(names(merged_params), all_formal_names)
+        )
+        lines <- c(lines, "\\arguments{")
+        for (i in seq_along(param_order)) {
+            param <- param_order[i]
+            desc_text <- escape_rd(merged_params[[param]])
+            lines <- c(lines, paste0("\\item{", escape_rd(param), "}{", desc_text, "}"))
+            if (i < length(param_order)) lines <- c(lines, "")
+        }
+        lines <- c(lines, "}")
+    }
+
+    # \value{} - from primary, or first block that has one
+    ret <- primary$tags$return
+    if (is.null(ret)) {
+        for (entry in entries) {
+            if (!is.null(entry$tags$return)) {
+                ret <- entry$tags$return
+                break
+            }
+        }
+    }
+    if (!is.null(ret)) {
+        lines <- c(lines, "\\value{")
+        lines <- c(lines, escape_rd(ret))
+        lines <- c(lines, "}")
+    }
+
+    # \description{} - from primary
+    desc <- if (!is.null(primary$tags$description)) {
+        primary$tags$description
+    } else if (!is.null(primary$tags$title)) {
+        primary$tags$title
+    } else {
+        topic
+    }
+    lines <- c(lines, "\\description{")
+    lines <- c(lines, escape_rd(desc))
+    lines <- c(lines, "}")
+
+    # \details{} - concatenated from all blocks
+    details_parts <- character()
+    for (entry in entries) {
+        if (!is.null(entry$tags$details)) {
+            details_parts <- c(details_parts, entry$tags$details)
+        }
+    }
+    if (length(details_parts) > 0) {
+        lines <- c(lines, "\\details{")
+        lines <- c(lines, escape_rd(paste(details_parts, collapse = "\n\n")))
+        lines <- c(lines, "}")
+    }
+
+    # \references{} - from primary
+    if (!is.null(primary$tags$references)) {
+        lines <- c(lines, "\\references{")
+        lines <- c(lines, escape_rd(primary$tags$references))
+        lines <- c(lines, "}")
+    }
+
+    # \examples{} - concatenated from all blocks
+    examples_parts <- character()
+    for (entry in entries) {
+        if (!is.null(entry$tags$examples) && nchar(trimws(entry$tags$examples)) > 0) {
+            examples_parts <- c(examples_parts, entry$tags$examples)
+        }
+    }
+    if (length(examples_parts) > 0) {
+        lines <- c(lines, "\\examples{")
+        lines <- c(lines, gsub("%", "\\\\%", paste(examples_parts, collapse = "\n\n")))
+        lines <- c(lines, "}")
+    }
+
+    # \seealso{} - from primary
+    if (!is.null(primary$tags$seealso)) {
+        lines <- c(lines, "\\seealso{")
+        lines <- c(lines, escape_rd(primary$tags$seealso))
+        lines <- c(lines, "}")
+    }
+
+    # \keyword{} - union from all blocks
+    all_kw <- character()
+    for (entry in entries) {
+        all_kw <- c(all_kw, entry$tags$keywords)
+    }
+    for (kw in unique(all_kw)) {
+        lines <- c(lines, paste0("\\keyword{", escape_rd(kw), "}"))
+    }
+
+    paste(lines, collapse = "\n")
+}
+
 #' Generate All Rd Files for a Package
 #'
 #' @param blocks List of documentation blocks from parse_package().
@@ -488,7 +668,6 @@ generate_all_rd <- function(
     path = "."
 ) {
     generated <- character()
-    topics_seen <- character()
 
     # First pass: parse all blocks and build lookup for @inheritParams
     all_tags <- list()
@@ -512,21 +691,22 @@ generate_all_rd <- function(
         all_blocks[[tags$name]] <- block
     }
 
-    # Second pass: resolve @inheritParams and generate Rd files
+    # Second pass: group blocks by topic (rdname or own name)
+    # Each topic maps to a list of list(tags, block) entries
+    topics <- list()
+    topic_order <- character()  # preserve encounter order
+
     for (name in names(all_tags)) {
         tags <- all_tags[[name]]
         block <- all_blocks[[name]]
 
         # Skip if @noRd
-        if (tags$noRd) {
-            next
-        }
+        if (tags$noRd) next
 
         # Skip blocks with no documentation content (like roxygen2)
-        # e.g., functions with only @keywords internal
-        if (is.null(tags$title) && is.null(tags$description)) {
-            next
-        }
+        # But keep blocks with @rdname - they merge into another block's page
+        if (is.null(tags$title) && is.null(tags$description) &&
+                is.null(tags$rdname)) next
 
         # Handle package documentation specially
         if (block$type == "package") {
@@ -537,43 +717,70 @@ generate_all_rd <- function(
             next
         }
 
-        # Check for duplicate topics
-        if (tags$name %in% topics_seen) {
-            warning("Duplicate topic '", tags$name, "' - skipping",
-                call. = FALSE)
-            next
-        }
-        topics_seen <- c(topics_seen, tags$name)
+        # Determine topic: @rdname overrides, otherwise use block name
+        topic <- if (!is.null(tags$rdname)) tags$rdname else tags$name
 
-        # Resolve @inheritParams
-        if (length(tags$inheritParams) > 0) {
-            tags <- resolve_inherit_params(tags, all_tags, block$formals)
+        if (is.null(topics[[topic]])) {
+            topics[[topic]] <- list()
+            topic_order <- c(topic_order, topic)
         }
+        topics[[topic]] <- c(topics[[topic]], list(list(tags = tags, block = block)))
+    }
 
-        # Generate Rd content based on block type
-        if (block$type == "data") {
-            # Data object - generate special data Rd
-            format_string <- format_object_info(tags$name, path)
-            rd_content <- generate_data_rd(tags, block$file, format_string)
+    # Third pass: generate Rd for each topic
+    for (topic in topic_order) {
+        entries <- topics[[topic]]
+
+        if (length(entries) == 1L) {
+            # Single block - use existing generate_rd() path (unchanged behavior)
+            tags <- entries[[1]]$tags
+            block <- entries[[1]]$block
+
+            # Resolve @inheritParams
+            if (length(tags$inheritParams) > 0) {
+                tags <- resolve_inherit_params(tags, all_tags, block$formals)
+            }
+
+            if (block$type == "data") {
+                format_string <- format_object_info(tags$name, path)
+                rd_content <- generate_data_rd(tags, block$file, format_string)
+            } else {
+                rd_content <- generate_rd(tags, block$formals, block$file)
+            }
+
+            filepath <- write_rd(rd_content, tags$name, path)
+            generated <- c(generated, filepath)
+
+            # Warn about undocumented params
+            if (block$type %in% c("function", "nn_module") && !is.null(block$formals)) {
+                formal_names <- block$formals$names
+                undoc <- setdiff(formal_names, names(tags$params))
+                undoc <- setdiff(undoc, "...")
+                if (length(undoc) > 0) {
+                    warning("Undocumented parameters in ", tags$name, ": ",
+                        paste(undoc, collapse = ", "),
+                        call. = FALSE)
+                }
+            }
         } else {
-            # Function or nn_module - generate regular Rd
-            rd_content <- generate_rd(tags, block$formals, block$file)
-        }
+            # Multiple blocks sharing @rdname - generate merged Rd
+            rd_content <- generate_rd_grouped(topic, entries, all_tags)
+            filepath <- write_rd(rd_content, topic, path)
+            generated <- c(generated, filepath)
 
-        # Write file
-        filepath <- write_rd(rd_content, tags$name, path)
-        generated <- c(generated, filepath)
-
-        # Warn about undocumented params (for functions and nn_modules)
-        if (block$type %in% c("function", "nn_module") && !is.null(block$formals)) {
-            formal_names <- block$formals$names
-            undoc <- setdiff(formal_names, names(tags$params))
-            # Filter out ... which is often intentionally undocumented
-            undoc <- setdiff(undoc, "...")
-            if (length(undoc) > 0) {
-                warning("Undocumented parameters in ", tags$name, ": ",
-                    paste(undoc, collapse = ", "),
-                    call. = FALSE)
+            # Warn about undocumented params across all entries
+            for (entry in entries) {
+                if (entry$block$type %in% c("function", "nn_module") &&
+                        !is.null(entry$block$formals)) {
+                    formal_names <- entry$block$formals$names
+                    undoc <- setdiff(formal_names, names(entry$tags$params))
+                    undoc <- setdiff(undoc, "...")
+                    if (length(undoc) > 0) {
+                        warning("Undocumented parameters in ", entry$tags$name, ": ",
+                            paste(undoc, collapse = ", "),
+                            call. = FALSE)
+                    }
+                }
             }
         }
     }
