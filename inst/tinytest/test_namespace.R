@@ -120,3 +120,42 @@ expect_true(grepl('S3method\\("%%",torch_tensor\\)', ns_ops))
 expect_true(grepl('S3method\\("\\$<-",nn_module\\)', ns_ops))
 # Should NOT be regular exports
 expect_false(grepl("export", ns_ops))
+
+# Test @useDynLib with .registration = TRUE (namespace-only block on NULL)
+blocks_dynlib <- list(
+  list(
+    lines = c("@useDynLib Rtorch, .registration = TRUE"),
+    object = ".namespace_only",
+    type = "namespace_only",
+    formals = NULL,
+    file = "test.R",
+    line = 1
+  ),
+  list(
+    lines = c("A function", "@export"),
+    object = "hello",
+    type = "function",
+    formals = NULL,
+    file = "test.R",
+    line = 5
+  )
+)
+
+ns_dynlib <- tinyrox:::generate_namespace(blocks_dynlib)
+expect_true(grepl("useDynLib\\(Rtorch, \\.registration = TRUE\\)", ns_dynlib))
+expect_true(grepl("export\\(hello\\)", ns_dynlib))
+
+# Test @useDynLib with package name only
+blocks_dynlib_simple <- list(
+  list(
+    lines = c("@useDynLib mypkg"),
+    object = ".namespace_only",
+    type = "namespace_only",
+    formals = NULL,
+    file = "test.R",
+    line = 1
+  )
+)
+
+ns_dynlib_simple <- tinyrox:::generate_namespace(blocks_dynlib_simple)
+expect_true(grepl("useDynLib\\(mypkg\\)", ns_dynlib_simple))
