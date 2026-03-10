@@ -1,6 +1,6 @@
 Package: tinyrox
 Title: Minimal R Documentation Generator
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Troy", "Hernandez", email = "troy@cornball.ai", role = c("aut", "cre"))
 Description: A deterministic, dependency-free documentation generator for R

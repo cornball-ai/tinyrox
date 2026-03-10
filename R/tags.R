@@ -46,7 +46,7 @@ SUPPORTED_TAGS <- c(SUPPORTED_DOC_TAGS, SUPPORTED_NS_TAGS)
 #' @param file Source file (for error messages).
 #' @param line_num Starting line number (for error messages).
 #' @return A list with parsed tag values.
-#' @keywords internal
+#' @export
 parse_tags <- function (lines, object_name, file = NULL, line_num = NULL) {
     result <- list(
         title = NULL,
