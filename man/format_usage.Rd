@@ -3,7 +3,7 @@
 \alias{format_usage}
 \title{Format Usage Line}
 \usage{
-format_usage(name, args)
+format_usage(name, args, pkg_generics = character())
 }
 \arguments{
 \item{name}{Function name.}

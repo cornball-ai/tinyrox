@@ -3,7 +3,7 @@
 \alias{detect_s3_method}
 \title{Detect S3 Method from Function Name}
 \usage{
-detect_s3_method(name)
+detect_s3_method(name, pkg_generics = character())
 }
 \arguments{
 \item{name}{Function name to check.}

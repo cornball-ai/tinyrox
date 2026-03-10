@@ -6,7 +6,8 @@ KNOWN_S3_GENERICS <- c(
     # Print/display
     "print", "format", "summary", "str",
     # Coercion
-    "as.character", "as.data.frame", "as.list", "as.matrix", "as.vector",
+    "as.array", "as.character", "as.data.frame", "as.list", "as.matrix",
+    "as.vector",
     "as.numeric", "as.integer", "as.logical", "as.double", "as.complex",
     "as.Date", "as.POSIXct", "as.POSIXlt", "as.factor",
     # Type checking
@@ -51,10 +52,14 @@ KNOWN_S3_GENERICS <- c(
 #' @keywords internal
 generate_namespace <- function (blocks) {
     exports <- character()
+    export_classes <- character()
     s3methods <- list()
     imports <- character()
     import_froms <- list()
     use_dynlibs <- character()
+
+    # Pre-pass: find package-defined S3 generics (functions calling UseMethod)
+    pkg_generics <- find_package_generics(blocks)
 
     for (block in blocks) {
         tags <- parse_tags(
@@ -66,7 +71,7 @@ generate_namespace <- function (blocks) {
 
         # Check for S3 method pattern in exports
         if (tags$export) {
-            s3_info <- detect_s3_method(block$object)
+            s3_info <- detect_s3_method(block$object, pkg_generics)
             if (!is.null(s3_info)) {
                 # It's an S3 method - add to s3methods instead of exports
                 s3methods <- c(s3methods, list(s3_info))
@@ -96,6 +101,11 @@ generate_namespace <- function (blocks) {
             }
         }
 
+        # Export classes
+        for (cls in tags$exportClasses) {
+            export_classes <- c(export_classes, cls)
+        }
+
         # Imports
         for (imp in tags$imports) {
             imports <- c(imports, imp)
@@ -120,12 +130,28 @@ generate_namespace <- function (blocks) {
     # Exports (sorted)
     exports <- sort(unique(exports))
     for (exp in exports) {
-        lines <- c(lines, paste0("export(", exp, ")"))
+        # Quote names that contain special characters (e.g., replacement functions)
+        if (grepl("<-", exp, fixed = TRUE) ||
+            !grepl("^[a-zA-Z._][a-zA-Z0-9._]*$", exp)) {
+            exp_fmt <- paste0('"', exp, '"')
+        } else {
+            exp_fmt <- exp
+        }
+        lines <- c(lines, paste0("export(", exp_fmt, ")"))
+    }
+
+    # Export classes (sorted)
+    export_classes <- sort(unique(export_classes))
+    if (length(export_classes) > 0) {
+        if (length(exports) > 0) lines <- c(lines, "")
+        for (cls in export_classes) {
+            lines <- c(lines, paste0("exportClasses(", cls, ")"))
+        }
     }
 
     # S3 methods (sorted by generic, then class)
     if (length(s3methods) > 0) {
-        if (length(exports) > 0) lines <- c(lines, "")
+        if (length(exports) > 0 || length(export_classes) > 0) lines <- c(lines, "")
         s3methods <- s3methods[order(
             vapply(s3methods, function (x) paste(x$generic, x$class), character(1))
         )]
@@ -263,7 +289,9 @@ write_namespace <- function(
 #' @param name Function name to check.
 #' @return List with generic and class components, or NULL if not an S3 method.
 #' @keywords internal
-detect_s3_method <- function(name) {
+detect_s3_method <- function(name, pkg_generics = character()) {
+    all_generics <- c(KNOWN_S3_GENERICS, pkg_generics)
+
     # Must contain a dot
     if (!grepl("\\.", name)) {
         return(NULL)
@@ -277,11 +305,39 @@ detect_s3_method <- function(name) {
         generic <- paste(parts[1:i], collapse = ".")
         class <- paste(parts[(i + 1) :length(parts)], collapse = ".")
 
-        if (generic %in% KNOWN_S3_GENERICS) {
+        if (generic %in% all_generics) {
             return(list(generic = generic, class = class))
         }
     }
 
     NULL
+}
+
+#' Find S3 generics defined in the package
+#'
+#' Scans source files for functions that call UseMethod() to identify
+#' package-defined S3 generics.
+#'
+#' @param blocks Documentation blocks from parse_package().
+#' @return Character vector of generic function names.
+#' @keywords internal
+find_package_generics <- function(blocks) {
+    # Collect unique source files from blocks
+    files <- unique(vapply(blocks, function(b) b$file, character(1)))
+    generics <- character()
+
+    for (f in files) {
+        if (!file.exists(f)) next
+        lines <- readLines(f, encoding = "UTF-8", warn = FALSE)
+        # Find lines with UseMethod("name")
+        m <- regmatches(lines, regexpr('UseMethod\\("([^"]+)"\\)', lines))
+        for (match in m) {
+            # Extract the generic name
+            gen <- sub('UseMethod\\("([^"]+)"\\)', "\\1", match)
+            generics <- c(generics, gen)
+        }
+    }
+
+    unique(generics)
 }
 

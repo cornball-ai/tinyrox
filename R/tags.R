@@ -28,6 +28,7 @@ SUPPORTED_DOC_TAGS <- c(
 #' @keywords internal
 SUPPORTED_NS_TAGS <- c(
     "export",
+    "exportClass",
     "exportS3Method",
     "import",
     "importFrom",
@@ -64,6 +65,7 @@ parse_tags <- function (lines, object_name, file = NULL, line_num = NULL) {
         rdname = NULL,
         noRd = FALSE,
         export = FALSE,
+        exportClasses = character(),
         exportS3Method = NULL,
         imports = list(),
         importFroms = list(),
@@ -252,6 +254,9 @@ save_tag <- function (result, tag, arg, accumulator, file, line_num) {
         },
         "export" = {
             result$export <- TRUE
+        },
+        "exportClass" = {
+            result$exportClasses <- c(result$exportClasses, value)
         },
         "exportS3Method" = {
             # Parse: generic class

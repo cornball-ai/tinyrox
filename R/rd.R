@@ -5,7 +5,7 @@
 #' @param source_file Source file path (for header comment).
 #' @return Character string of Rd content.
 #' @keywords internal
-generate_rd <- function (tags, formals = NULL, source_file = NULL) {
+generate_rd <- function (tags, formals = NULL, source_file = NULL, pkg_generics = character()) {
     lines <- character()
 
     # Header comment - distinctively tinyrox
@@ -33,7 +33,7 @@ generate_rd <- function (tags, formals = NULL, source_file = NULL) {
     # Usage (for functions) - before arguments like roxygen2
     # Generate usage even for no-arg functions (formals is list with empty names)
     if (!is.null(formals)) {
-        usage <- format_usage(tags$name, formals$usage)
+        usage <- format_usage(tags$name, formals$usage, pkg_generics)
         lines <- c(lines, "\\usage{")
         lines <- c(lines, escape_rd(usage))
         lines <- c(lines, "}")
@@ -320,10 +320,9 @@ get_maintainer_from_desc <- function(path) {
 escape_rd <- function(text) {
     if (is.null(text)) return("")
 
-    # Check if text contains Rd markup (backslash commands like \describe, \item, etc.)
-    # If so, pass through with minimal escaping (just %)
-    if (grepl("\\\\[a-zA-Z]+\\{", text)) {
-        # Contains Rd markup - only escape %
+    # Check if text contains Rd markup (backslash commands like \describe, \item,
+    # \Sexpr[...]{}, etc.). If so, pass through with minimal escaping (just %).
+    if (grepl("\\\\[a-zA-Z]+(\\[.*\\])?\\{", text)) {
         text <- gsub("%", "\\\\%", text)
         return(text)
     }
@@ -349,23 +348,38 @@ escape_rd <- function(text) {
 #' @keywords internal
 format_usage <- function(
     name,
-    args
+    args,
+    pkg_generics = character()
 ) {
+    # Check if it's a replacement function (name ends with <-)
+    is_replacement <- grepl("<-$", name)
+
     # Check if it's an S3 method
-    s3_info <- detect_s3_method(name)
+    s3_info <- detect_s3_method(name, pkg_generics)
     if (!is.null(s3_info)) {
-        display_name <- paste0("\\method{", s3_info$generic, "}{", s3_info$class, "}")
+        gen_display <- s3_info$generic
+        if (is_replacement) gen_display <- sub("<-$", "", gen_display)
+        display_name <- paste0("\\method{", gen_display, "}{", s3_info$class, "}")
     } else {
-        display_name <- name
+        display_name <- if (is_replacement) sub("<-$", "", name) else name
     }
 
-    # Build single-line version
-    single_line <- paste0(display_name, "(", paste(args, collapse = ", "), ")")
+    # For replacement functions, last arg is 'value' which goes on the right side
+    if (is_replacement && length(args) >= 1) {
+        lhs_args <- args[-length(args)]
+        single_line <- paste0(display_name, "(", paste(lhs_args, collapse = ", "), ") <- value")
+    } else {
+        single_line <- paste0(display_name, "(", paste(args, collapse = ", "), ")")
+    }
 
     # If short enough, use single line
     if (nchar(single_line) <= 80) {
         return(single_line)
     }
+
+    # For replacement functions, wrap only the LHS args
+    wrap_args <- if (is_replacement && length(args) >= 1) args[-length(args)] else args
+    close_suffix <- if (is_replacement) ") <- value" else ")"
 
     # Wrap to multiple lines, packing multiple args per line
     # Continuation lines indented to align after opening paren
@@ -374,9 +388,9 @@ format_usage <- function(
     lines <- character()
     current <- open
 
-    for (i in seq_along(args)) {
-        arg <- args[i]
-        suffix <- if (i < length(args)) ", " else ""
+    for (i in seq_along(wrap_args)) {
+        arg <- wrap_args[i]
+        suffix <- if (i < length(wrap_args)) ", " else ""
         piece <- paste0(arg, suffix)
 
         if (nchar(current) + nchar(piece) > 80 && current != open) {
@@ -387,7 +401,7 @@ format_usage <- function(
         }
     }
 
-    current <- paste0(current, ")")
+    current <- paste0(current, close_suffix)
     lines <- c(lines, current)
     paste(lines, collapse = "\n")
 }
@@ -493,7 +507,7 @@ write_rd <- function(
 #' @param all_tags All parsed tags (for @inheritParams resolution).
 #' @return Character string of merged Rd content.
 #' @keywords internal
-generate_rd_grouped <- function(topic, entries, all_tags) {
+generate_rd_grouped <- function(topic, entries, all_tags, pkg_generics = character()) {
     lines <- character()
 
     # Header
@@ -538,7 +552,7 @@ generate_rd_grouped <- function(topic, entries, all_tags) {
     for (entry in entries) {
         if (!is.null(entry$block$formals)) {
             usage_lines <- c(usage_lines,
-                escape_rd(format_usage(entry$tags$name, entry$block$formals$usage)))
+                escape_rd(format_usage(entry$tags$name, entry$block$formals$usage, pkg_generics)))
         }
     }
     if (length(usage_lines) > 0) {
@@ -674,6 +688,9 @@ generate_all_rd <- function(
 ) {
     generated <- character()
 
+    # Find package-defined S3 generics for proper \method{}{} usage formatting
+    pkg_generics <- find_package_generics(blocks)
+
     # First pass: parse all blocks and build lookup for @inheritParams
     all_tags <- list()
     all_blocks <- list()
@@ -750,7 +767,7 @@ generate_all_rd <- function(
                 format_string <- format_object_info(tags$name, path)
                 rd_content <- generate_data_rd(tags, block$file, format_string)
             } else {
-                rd_content <- generate_rd(tags, block$formals, block$file)
+                rd_content <- generate_rd(tags, block$formals, block$file, pkg_generics)
             }
 
             filepath <- write_rd(rd_content, tags$name, path)
@@ -769,7 +786,7 @@ generate_all_rd <- function(
             }
         } else {
             # Multiple blocks sharing @rdname - generate merged Rd
-            rd_content <- generate_rd_grouped(topic, entries, all_tags)
+            rd_content <- generate_rd_grouped(topic, entries, all_tags, pkg_generics)
             filepath <- write_rd(rd_content, topic, path)
             generated <- c(generated, filepath)
 
@@ -916,8 +933,15 @@ resolve_inherit_params <- function(
     for (source_name in tags$inheritParams) {
         # Handle pkg::function syntax
         if (grepl("::", source_name)) {
-            # External package - skip for now (would need to load package)
-            # TODO: Support external packages
+            ext_params <- resolve_external_params(source_name)
+            if (length(ext_params) > 0) {
+                for (param_name in names(ext_params)) {
+                    if (param_name %in% formal_names &&
+                            !param_name %in% names(tags$params)) {
+                        tags$params[[param_name]] <- ext_params[[param_name]]
+                    }
+                }
+            }
             next
         }
 
@@ -948,5 +972,72 @@ resolve_inherit_params <- function(
     }
 
     tags
+}
+
+#' Resolve Parameters from External Package Rd Files
+#'
+#' Reads an installed package's Rd file to extract parameter documentation
+#' for use with `@inheritParams pkg::function`.
+#'
+#' @param source_name Character string like "base::cat" or "stats::lm".
+#' @return Named list of parameter descriptions, or empty list on failure.
+#' @keywords internal
+resolve_external_params <- function(source_name) {
+    parts <- strsplit(source_name, "::")[[1]]
+    if (length(parts) != 2) return(list())
+
+    pkg <- parts[1]
+    fun <- parts[2]
+
+    # Use help() to find the Rd and the internal parser to read it
+    help_obj <- tryCatch(
+        utils::help(fun, package = (pkg), help_type = "text"),
+        error = function(e) NULL
+    )
+    if (is.null(help_obj) || length(help_obj) == 0) {
+        warning("@inheritParams: '", source_name, "' not found",
+            call. = FALSE)
+        return(list())
+    }
+
+    rd <- tryCatch(
+        utils:::.getHelpFile(help_obj),
+        error = function(e) NULL
+    )
+    if (is.null(rd)) return(list())
+
+    # Find the \arguments section in the parsed Rd object
+    args_idx <- which(vapply(
+        rd,
+        function(x) identical(attr(x, "Rd_tag"), "\\arguments"),
+        logical(1)
+    ))
+    if (length(args_idx) == 0) return(list())
+
+    params <- list()
+    args_section <- rd[[args_idx[1]]]
+
+    for (item in args_section) {
+        if (!identical(attr(item, "Rd_tag"), "\\item")) next
+        if (length(item) < 2) next
+
+        # item[[1]] is the param name, item[[2]] is the description
+        # Flatten to character, preserving Rd markup
+        param_name <- paste(unlist(item[[1]]), collapse = "")
+        param_name <- trimws(param_name)
+
+        # Convert description to Rd text (preserve markup for output)
+        desc_parts <- item[[2]]
+        desc <- paste(unlist(desc_parts), collapse = "")
+        desc <- trimws(desc)
+        # Normalize whitespace
+        desc <- gsub("\\s+", " ", desc)
+
+        if (nzchar(param_name) && nzchar(desc)) {
+            params[[param_name]] <- desc
+        }
+    }
+
+    params
 }
 

@@ -20,4 +20,3 @@ A list with parsed tag values.
 \description{
 Parse Tags from Documentation Lines
 }
-\keyword{internal}

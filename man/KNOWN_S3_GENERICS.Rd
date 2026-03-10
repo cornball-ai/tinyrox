@@ -4,7 +4,7 @@
 \alias{KNOWN_S3_GENERICS}
 \title{Known S3 Generic Functions}
 \format{
-An object of class \code{character} of length 122.
+An object of class \code{character} of length 139.
 }
 \usage{
 KNOWN_S3_GENERICS

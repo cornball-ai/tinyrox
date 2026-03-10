@@ -4,7 +4,7 @@
 \alias{SUPPORTED_NS_TAGS}
 \title{Supported Namespace Tags}
 \format{
-An object of class \code{character} of length 5.
+An object of class \code{character} of length 6.
 }
 \usage{
 SUPPORTED_NS_TAGS

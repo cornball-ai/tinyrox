@@ -4,7 +4,7 @@
 \alias{SUPPORTED_TAGS}
 \title{All Supported Tags}
 \format{
-An object of class \code{character} of length 23.
+An object of class \code{character} of length 25.
 }
 \usage{
 SUPPORTED_TAGS
