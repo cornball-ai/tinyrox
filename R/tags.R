@@ -280,8 +280,9 @@ save_tag <- function (result, tag, arg, accumulator, file, line_num) {
             result$imports <- c(result$imports, list(value))
         },
         "importFrom" = {
-            # Parse: pkg sym1 sym2 ...
-            parts <- strsplit(value, "\\s+") [[1]]
+            # Parse: pkg sym1 sym2 ... (single-line only, ignore continuation)
+            line1 <- if (!is.null(arg)) arg else value
+            parts <- strsplit(line1, "\\s+") [[1]]
             if (length(parts) >= 2) {
                 result$importFroms <- c(result$importFroms, list(list(
                             pkg = parts[1],
