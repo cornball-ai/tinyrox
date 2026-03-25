@@ -1,10 +1,11 @@
 Package: tinyrox
 Title: Minimal R Documentation Generator
-Version: 0.3.0
+Version: 0.3.1
 Authors@R:
-    person("Troy", "Hernandez", email = "troy@cornball.ai", role = c("aut", "cre"))
+    person("Troy", "Hernandez", email = "troy@cornball.ai", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0005-4248-604X"))
 Description: A deterministic, dependency-free documentation generator for R
-    packages. Generates valid Rd files and NAMESPACE from roxygen2-style comments
+    packages. Generates valid Rd files and NAMESPACE from 'roxygen2'-style comments
     using only base R. Supports a strict subset of tags with no markdown parsing,
     no inference magic, and explicit-only behavior.
 License: GPL-3

@@ -20,3 +20,11 @@ A list with parsed tag values.
 \description{
 Parse Tags from Documentation Lines
 }
+\examples{
+lines <- c("Title Here", "", "Description text.", "", "@param x A number.",
+  "@return The number.", "@export")
+tags <- parse_tags(lines, "my_function")
+tags$title
+tags$params
+
+}

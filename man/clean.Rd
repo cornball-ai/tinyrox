@@ -10,6 +10,9 @@ clean(path = ".", namespace = FALSE)
 
 \item{namespace}{Also remove NAMESPACE? Default FALSE.}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Removes all Rd files from man/ directory.
 }

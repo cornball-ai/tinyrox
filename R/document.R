@@ -85,6 +85,8 @@ document <- function (path = ".", namespace = c("overwrite", "append", "none"),
 #' @param path Path to package root directory.
 #' @param namespace Also remove NAMESPACE? Default FALSE.
 #'
+#' @return No return value, called for side effects.
+#'
 #' @export
 #'
 #' @examples

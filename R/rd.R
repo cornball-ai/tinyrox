@@ -1000,10 +1000,10 @@ resolve_external_params <- function(source_name) {
         return(list())
     }
 
-    rd <- tryCatch(
-        utils:::.getHelpFile(help_obj),
-        error = function(e) NULL
-    )
+    rd <- tryCatch({
+        rd_file <- help_obj[[1]]
+        tools::parse_Rd(paste0(rd_file, ".Rd"))
+    }, error = function(e) NULL)
     if (is.null(rd)) return(list())
 
     # Find the \arguments section in the parsed Rd object
