@@ -15,8 +15,18 @@ List with all issues
 Runs all CRAN compliance checks (DESCRIPTION + code).
 }
 \examples{
-\dontrun{
-check_cran()
-check_cran("path/to/package")
+\donttest{
+# Create a minimal package in tempdir
+pkg <- file.path(tempdir(), "mypkg")
+dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0\nDescription: A test package.",
+    file.path(pkg, "DESCRIPTION"))
+writeLines("add <- function(x, y) x + y",
+    file.path(pkg, "R", "add.R"))
+
+check_cran(pkg)
+
+# Clean up
+unlink(pkg, recursive = TRUE)
 }
 }

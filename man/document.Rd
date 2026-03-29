@@ -29,17 +29,19 @@ Main function for tinyrox. Parses R source files for documentation
 comments and generates Rd files and NAMESPACE.
 }
 \examples{
-\dontrun{
-# Document current package
-document()
+\donttest{
+# Create a minimal package in tempdir
+pkg <- file.path(tempdir(), "mypkg")
+dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0",
+    file.path(pkg, "DESCRIPTION"))
+writeLines("#' Add two numbers\n#' @param x A number\n#' @param y A number\n#' @export\nadd <- function(x, y) x + y",
+    file.path(pkg, "R", "add.R"))
 
-# Document with append mode for NAMESPACE
-document(namespace = "append")
+# Document the package
+document(pkg, cran_check = FALSE)
 
-# Document without modifying NAMESPACE
-document(namespace = "none")
-
-# Skip CRAN compliance check
-document(cran_check = FALSE)
+# Clean up
+unlink(pkg, recursive = TRUE)
 }
 }

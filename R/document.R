@@ -19,18 +19,20 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' # Document current package
-#' document()
+#' \donttest{
+#' # Create a minimal package in tempdir
+#' pkg <- file.path(tempdir(), "mypkg")
+#' dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+#' writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0",
+#'     file.path(pkg, "DESCRIPTION"))
+#' writeLines("#' Add two numbers\n#' @param x A number\n#' @param y A number\n#' @export\nadd <- function(x, y) x + y",
+#'     file.path(pkg, "R", "add.R"))
 #'
-#' # Document with append mode for NAMESPACE
-#' document(namespace = "append")
+#' # Document the package
+#' document(pkg, cran_check = FALSE)
 #'
-#' # Document without modifying NAMESPACE
-#' document(namespace = "none")
-#'
-#' # Skip CRAN compliance check
-#' document(cran_check = FALSE)
+#' # Clean up
+#' unlink(pkg, recursive = TRUE)
 #' }
 document <- function (path = ".", namespace = c("overwrite", "append", "none"),
                       cran_check = TRUE) {
@@ -90,9 +92,18 @@ document <- function (path = ".", namespace = c("overwrite", "append", "none"),
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' clean()
-#' clean(namespace = TRUE)
+#' \donttest{
+#' # Create a minimal package in tempdir
+#' pkg <- file.path(tempdir(), "mypkg")
+#' dir.create(file.path(pkg, "man"), recursive = TRUE, showWarnings = FALSE)
+#' writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0",
+#'     file.path(pkg, "DESCRIPTION"))
+#' writeLines("placeholder", file.path(pkg, "man", "test.Rd"))
+#'
+#' clean(pkg)
+#'
+#' # Clean up
+#' unlink(pkg, recursive = TRUE)
 #' }
 clean <- function (path = ".", namespace = FALSE) {
     man_dir <- file.path(path, "man")

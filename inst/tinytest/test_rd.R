@@ -87,3 +87,33 @@ expect_equal(resolved$params$x, "The x parameter")
 expect_equal(resolved$params$y, "Overridden y param")
 # Should NOT inherit z (not in formals)
 expect_true(is.null(resolved$params$z))
+
+# Test @name override suppresses formals from underlying function
+# (e.g., @name pkg-package above .onLoad should not produce \usage)
+test_name_override_no_usage <- function() {
+  pkg <- file.path(tempdir(), "namepkg")
+  dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+  writeLines("Package: namepkg\nTitle: Test\nVersion: 0.1.0",
+      file.path(pkg, "DESCRIPTION"))
+  writeLines(c(
+      "#' @name namepkg-package",
+      "#' @title namepkg",
+      "#' @description A test package.",
+      "#' @useDynLib namepkg",
+      ".onLoad <- function(libname, pkgname) {}"),
+      file.path(pkg, "R", "zzz.R"))
+
+  rd_files <- tinyrox:::generate_all_rd(
+      tinyrox:::parse_package(pkg), pkg)
+
+  rd_file <- file.path(pkg, "man", "namepkg-package.Rd")
+  expect_true(file.exists(rd_file))
+  rd_content <- paste(readLines(rd_file), collapse = "\n")
+
+  # Should NOT have \usage with .onLoad formals
+  expect_false(grepl("\\\\usage", rd_content))
+  expect_false(grepl("libname", rd_content))
+
+  unlink(pkg, recursive = TRUE)
+}
+test_name_override_no_usage()

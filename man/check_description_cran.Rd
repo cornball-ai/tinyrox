@@ -18,8 +18,16 @@ Validates Title and Description fields for common CRAN issues:
 unquoted package names, missing web service links, etc.
 }
 \examples{
-\dontrun{
-check_description_cran()
-check_description_cran("path/to/package")
+\donttest{
+# Create a minimal package in tempdir
+pkg <- file.path(tempdir(), "mypkg")
+dir.create(pkg, recursive = TRUE, showWarnings = FALSE)
+writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0\nDescription: A test package.",
+    file.path(pkg, "DESCRIPTION"))
+
+check_description_cran(pkg)
+
+# Clean up
+unlink(pkg, recursive = TRUE)
 }
 }

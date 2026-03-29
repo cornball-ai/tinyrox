@@ -17,8 +17,16 @@ Invisibly returns TRUE if changes were made
 Automatically fixes common CRAN issues in DESCRIPTION.
 }
 \examples{
-\dontrun{
-fix_description_cran()
-fix_description_cran(backup = FALSE)
+\donttest{
+# Create a minimal package in tempdir
+pkg <- file.path(tempdir(), "mypkg")
+dir.create(pkg, recursive = TRUE, showWarnings = FALSE)
+writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0\nDescription: A test package.",
+    file.path(pkg, "DESCRIPTION"))
+
+fix_description_cran(pkg, backup = FALSE)
+
+# Clean up
+unlink(pkg, recursive = TRUE)
 }
 }

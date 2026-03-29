@@ -86,3 +86,42 @@ test_weblinks <- function() {
   expect_equal(length(missing2), 0)
 }
 test_weblinks()
+
+# Test find_dontrun_examples
+test_dontrun <- function() {
+  # Exported function with \dontrun should be flagged
+  lines1 <- c(
+    "#' Title",
+    "#' @export",
+    "#' @examples",
+    "#' \\dontrun{",
+    "#' foo()",
+    "#' }",
+    "foo <- function() 1"
+  )
+  expect_true("foo" %in% tinyrox:::find_dontrun_examples(lines1))
+
+  # Exported function with \donttest should NOT be flagged
+  lines2 <- c(
+    "#' Title",
+    "#' @export",
+    "#' @examples",
+    "#' \\donttest{",
+    "#' bar()",
+    "#' }",
+    "bar <- function() 1"
+  )
+  expect_equal(length(tinyrox:::find_dontrun_examples(lines2)), 0)
+
+  # Non-exported function with \dontrun should NOT be flagged
+  lines3 <- c(
+    "#' Title",
+    "#' @examples",
+    "#' \\dontrun{",
+    "#' baz()",
+    "#' }",
+    "baz <- function() 1"
+  )
+  expect_equal(length(tinyrox:::find_dontrun_examples(lines3)), 0)
+}
+test_dontrun()

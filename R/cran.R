@@ -44,9 +44,17 @@ KNOWN_SOFTWARE_NAMES <- c(
 #'
 #' @export
 #' @examples
-#' \dontrun{
-#' check_description_cran()
-#' check_description_cran("path/to/package")
+#' \donttest{
+#' # Create a minimal package in tempdir
+#' pkg <- file.path(tempdir(), "mypkg")
+#' dir.create(pkg, recursive = TRUE, showWarnings = FALSE)
+#' writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0\nDescription: A test package.",
+#'     file.path(pkg, "DESCRIPTION"))
+#'
+#' check_description_cran(pkg)
+#'
+#' # Clean up
+#' unlink(pkg, recursive = TRUE)
 #' }
 check_description_cran <- function (path = ".", fix = FALSE) {
     desc_file <- file.path(path, "DESCRIPTION")
@@ -267,9 +275,17 @@ escape_regex <- function (x) {
 #'
 #' @export
 #' @examples
-#' \dontrun{
-#' fix_description_cran()
-#' fix_description_cran(backup = FALSE)
+#' \donttest{
+#' # Create a minimal package in tempdir
+#' pkg <- file.path(tempdir(), "mypkg")
+#' dir.create(pkg, recursive = TRUE, showWarnings = FALSE)
+#' writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0\nDescription: A test package.",
+#'     file.path(pkg, "DESCRIPTION"))
+#'
+#' fix_description_cran(pkg, backup = FALSE)
+#'
+#' # Clean up
+#' unlink(pkg, recursive = TRUE)
 #' }
 fix_description_cran <- function (path = ".", backup = TRUE) {
     desc_file <- file.path(path, "DESCRIPTION")
@@ -335,9 +351,19 @@ fix_description_cran <- function (path = ".", backup = TRUE) {
 #'
 #' @export
 #' @examples
-#' \dontrun{
-#' check_code_cran()
-#' check_code_cran("path/to/package")
+#' \donttest{
+#' # Create a minimal package in tempdir
+#' pkg <- file.path(tempdir(), "mypkg")
+#' dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+#' writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0",
+#'     file.path(pkg, "DESCRIPTION"))
+#' writeLines("add <- function(x, y) x + y",
+#'     file.path(pkg, "R", "add.R"))
+#'
+#' check_code_cran(pkg)
+#'
+#' # Clean up
+#' unlink(pkg, recursive = TRUE)
 #' }
 check_code_cran <- function (path = ".") {
     r_dir <- file.path(path, "R")
@@ -389,6 +415,11 @@ check_code_lines <- function (lines, filename) {
 
         # Skip comments
         if (grepl("^\\s*#", line)) next
+
+        # Strip string literals so patterns inside quotes don't trigger
+        # false positives (e.g., grepl("\\bcat\\s*\\(", ...) matching cat())
+        line <- gsub('"[^"]*"', '""', line)
+        line <- gsub("'[^']*'", "''", line)
 
         # Check for T/F instead of TRUE/FALSE
         # Match T or F as standalone tokens (word boundaries)
@@ -480,9 +511,19 @@ check_code_lines <- function (lines, filename) {
 #'
 #' @export
 #' @examples
-#' \dontrun{
-#' check_cran()
-#' check_cran("path/to/package")
+#' \donttest{
+#' # Create a minimal package in tempdir
+#' pkg <- file.path(tempdir(), "mypkg")
+#' dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+#' writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0\nDescription: A test package.",
+#'     file.path(pkg, "DESCRIPTION"))
+#' writeLines("add <- function(x, y) x + y",
+#'     file.path(pkg, "R", "add.R"))
+#'
+#' check_cran(pkg)
+#'
+#' # Clean up
+#' unlink(pkg, recursive = TRUE)
 #' }
 check_cran <- function (path = ".") {
     message("Checking CRAN compliance...")
@@ -516,9 +557,19 @@ check_cran <- function (path = ".") {
 #'
 #' @export
 #' @examples
-#' \dontrun{
-#' check_examples_cran()
-#' check_examples_cran("path/to/package")
+#' \donttest{
+#' # Create a minimal package in tempdir
+#' pkg <- file.path(tempdir(), "mypkg")
+#' dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+#' writeLines("Package: mypkg\nTitle: Test\nVersion: 0.1.0",
+#'     file.path(pkg, "DESCRIPTION"))
+#' writeLines("#' Add numbers\n#' @export\nadd <- function(x, y) x + y",
+#'     file.path(pkg, "R", "add.R"))
+#'
+#' check_examples_cran(pkg)
+#'
+#' # Clean up
+#' unlink(pkg, recursive = TRUE)
 #' }
 check_examples_cran <- function (path = ".") {
     r_dir <- file.path(path, "R")
@@ -534,16 +585,26 @@ check_examples_cran <- function (path = ".") {
     }
 
     missing_examples <- character()
+    dontrun_fns <- character()
 
     for (file in r_files) {
         content <- readLines(file, warn = FALSE)
         file_missing <- find_exports_without_examples(content)
         missing_examples <- c(missing_examples, file_missing)
+        file_dontrun <- find_dontrun_examples(content)
+        dontrun_fns <- c(dontrun_fns, file_dontrun)
     }
 
     if (length(missing_examples) > 0) {
         warning("CRAN: Exported functions without examples: ",
             paste(missing_examples, collapse = ", "),
+            call. = FALSE)
+    }
+
+    if (length(dontrun_fns) > 0) {
+        warning("CRAN: Examples use \\dontrun (replace with \\donttest ",
+            "unless truly non-executable): ",
+            paste(dontrun_fns, collapse = ", "),
             call. = FALSE)
     }
 
@@ -599,6 +660,50 @@ find_exports_without_examples <- function (lines) {
     }
 
     missing
+}
+
+#' Find Exported Functions Using dontrun in Examples
+#'
+#' Parses R file content to find @export tags with \\dontrun in @examples.
+#'
+#' @param lines Character vector of file lines
+#' @return Character vector of function names using dontrun
+find_dontrun_examples <- function (lines) {
+    found <- character()
+    in_doc_block <- FALSE
+    has_export <- FALSE
+    has_dontrun <- FALSE
+
+    for (i in seq_along(lines)) {
+        line <- lines[i]
+
+        if (grepl("^#'", line)) {
+            if (!in_doc_block) {
+                in_doc_block <- TRUE
+                has_export <- FALSE
+                has_dontrun <- FALSE
+            }
+
+            if (grepl("^#'\\s*@export", line)) {
+                has_export <- TRUE
+            }
+
+            if (grepl("\\\\dontrun\\{", line)) {
+                has_dontrun <- TRUE
+            }
+        } else if (in_doc_block) {
+            in_doc_block <- FALSE
+
+            if (has_export && has_dontrun) {
+                func_name <- extract_function_name(line)
+                if (!is.null(func_name)) {
+                    found <- c(found, func_name)
+                }
+            }
+        }
+    }
+
+    found
 }
 
 #' Extract Function Name from Definition Line

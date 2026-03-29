@@ -767,7 +767,12 @@ generate_all_rd <- function(
                 format_string <- format_object_info(tags$name, path)
                 rd_content <- generate_data_rd(tags, block$file, format_string)
             } else {
-                rd_content <- generate_rd(tags, block$formals, block$file, pkg_generics)
+                # If @name overrides to something different from the actual
+                # object, don't use the object's formals for \usage (e.g.,
+                # @name pkg-package above .onLoad would produce bad usage)
+                fmls <- block$formals
+                if (tags$name != block$object) fmls <- NULL
+                rd_content <- generate_rd(tags, fmls, block$file, pkg_generics)
             }
 
             filepath <- write_rd(rd_content, tags$name, path)
