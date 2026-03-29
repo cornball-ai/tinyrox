@@ -125,3 +125,39 @@ test_dontrun <- function() {
   expect_equal(length(tinyrox:::find_dontrun_examples(lines3)), 0)
 }
 test_dontrun()
+
+# Test find_long_example_lines
+test_long_lines <- function() {
+  short_line <- paste0("#' ", paste(rep("x", 50), collapse = ""))
+  long_line <- paste0("#' ", paste(rep("x", 101), collapse = ""))
+
+  # Long line in examples should be flagged
+  lines1 <- c(
+    "#' Title",
+    "#' @examples",
+    long_line,
+    "foo <- function() 1"
+  )
+  expect_equal(length(tinyrox:::find_long_example_lines(lines1, "test.R")), 1)
+
+  # Short line should not be flagged
+  lines2 <- c(
+    "#' Title",
+    "#' @examples",
+    short_line,
+    "foo <- function() 1"
+  )
+  expect_equal(length(tinyrox:::find_long_example_lines(lines2, "test.R")), 0)
+
+  # Long line outside @examples should not be flagged
+  lines3 <- c(
+    "#' Title",
+    "#' @description",
+    long_line,
+    "#' @examples",
+    "#' foo()",
+    "foo <- function() 1"
+  )
+  expect_equal(length(tinyrox:::find_long_example_lines(lines3, "test.R")), 0)
+}
+test_long_lines()

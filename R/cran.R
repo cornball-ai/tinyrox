@@ -586,6 +586,7 @@ check_examples_cran <- function (path = ".") {
 
     missing_examples <- character()
     dontrun_fns <- character()
+    long_lines <- character()
 
     for (file in r_files) {
         content <- readLines(file, warn = FALSE)
@@ -593,6 +594,8 @@ check_examples_cran <- function (path = ".") {
         missing_examples <- c(missing_examples, file_missing)
         file_dontrun <- find_dontrun_examples(content)
         dontrun_fns <- c(dontrun_fns, file_dontrun)
+        file_long <- find_long_example_lines(content, basename(file))
+        long_lines <- c(long_lines, file_long)
     }
 
     if (length(missing_examples) > 0) {
@@ -605,6 +608,13 @@ check_examples_cran <- function (path = ".") {
         warning("CRAN: Examples use \\dontrun (replace with \\donttest ",
             "unless truly non-executable): ",
             paste(dontrun_fns, collapse = ", "),
+            call. = FALSE)
+    }
+
+    if (length(long_lines) > 0) {
+        warning("CRAN: Example lines exceed 100 characters ",
+            "(will be truncated in PDF manual):\n",
+            paste("  ", long_lines, collapse = "\n"),
             call. = FALSE)
     }
 
@@ -699,6 +709,49 @@ find_dontrun_examples <- function (lines) {
                 if (!is.null(func_name)) {
                     found <- c(found, func_name)
                 }
+            }
+        }
+    }
+
+    found
+}
+
+#' Find Example Lines Exceeding 100 Characters
+#'
+#' Scans @examples blocks for lines that will be truncated in the PDF manual.
+#'
+#' @param lines Character vector of file lines
+#' @param filename Filename for reporting
+#' @return Character vector of warnings (file:line format)
+find_long_example_lines <- function (lines, filename) {
+    found <- character()
+    in_examples <- FALSE
+
+    for (i in seq_along(lines)) {
+        line <- lines[i]
+
+        if (!grepl("^#'", line)) {
+            in_examples <- FALSE
+            next
+        }
+
+        if (grepl("^#'\\s*@examples", line)) {
+            in_examples <- TRUE
+            next
+        }
+
+        # Other tags end the examples block
+        if (grepl("^#'\\s*@[a-zA-Z]", line)) {
+            in_examples <- FALSE
+            next
+        }
+
+        if (in_examples) {
+            # Strip the #' prefix to get the actual example content
+            content <- sub("^#'\\s?", "", line)
+            if (nchar(content) > 100) {
+                found <- c(found,
+                    paste0(filename, ":", i, " (", nchar(content), " chars)"))
             }
         }
     }
