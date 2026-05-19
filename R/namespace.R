@@ -3,46 +3,46 @@
 #' List of base R S3 generics for auto-detection when @export is used.
 #' @keywords internal
 KNOWN_S3_GENERICS <- c(
-    # Print/display
-    "print", "format", "summary", "str",
-    # Coercion
-    "as.array", "as.character", "as.data.frame", "as.list", "as.matrix",
-    "as.vector",
-    "as.numeric", "as.integer", "as.logical", "as.double", "as.complex",
-    "as.Date", "as.POSIXct", "as.POSIXlt", "as.factor",
-    # Type checking
-    "is.na", "is.null", "is.finite", "is.infinite", "is.nan",
-    # Subsetting
-    "[", "[[", "$", "[<-", "[[<-", "$<-",
-    # Arithmetic operators
-    "+", "-", "*", "/", "^", "%%", "%/%",
-    # Comparison operators
-    "==", "!=", "<", "<=", ">=", ">",
-    # Logical operators
-    "&", "|", "!",
-    # Math/ops group generics
-    "mean", "median", "quantile", "range", "sum", "prod", "min", "max",
-    "Math", "Ops", "Summary", "Complex",
-    # Dimensions
-    "length", "dim", "nrow", "ncol", "names", "dimnames", "row.names",
-    "length<-", "dim<-", "names<-", "dimnames<-", "row.names<-",
-    # Model methods
-    "coef", "fitted", "residuals", "predict", "simulate", "update",
-    "vcov", "confint", "logLik", "AIC", "BIC", "nobs", "df.residual",
-    "deviance", "extractAIC", "model.frame", "model.matrix",
-    "anova", "effects", "weights", "variable.names", "case.names",
-    # Plot
-    "plot", "lines", "points", "text", "image", "contour", "persp",
-    "pairs", "hist", "barplot", "boxplot", "dotchart",
-    # Other common
-    "c", "t", "rep", "rev", "sort", "unique", "duplicated", "anyDuplicated",
-    "merge", "split", "cut", "cbind", "rbind", "stack", "unstack",
-    "head", "tail", "within", "transform", "subset", "aggregate",
-    "droplevels", "xtfrm", "labels", "levels", "levels<-",
-    # Connection/IO
-    "open", "close", "flush", "read", "write", "seek", "truncate",
-    # Misc
-    "all.equal", "Negate"
+                       # Print/display
+                       "print", "format", "summary", "str",
+                       # Coercion
+                       "as.array", "as.character", "as.data.frame", "as.list", "as.matrix",
+                       "as.vector",
+                       "as.numeric", "as.integer", "as.logical", "as.double", "as.complex",
+                       "as.Date", "as.POSIXct", "as.POSIXlt", "as.factor",
+                       # Type checking
+                       "is.na", "is.null", "is.finite", "is.infinite", "is.nan",
+                       # Subsetting
+                       "[", "[[", "$", "[<-", "[[<-", "$<-",
+                       # Arithmetic operators
+                       "+", "-", "*", "/", "^", "%%", "%/%",
+                       # Comparison operators
+                       "==", "!=", "<", "<=", ">=", ">",
+                       # Logical operators
+                       "&", "|", "!",
+                       # Math/ops group generics
+                       "mean", "median", "quantile", "range", "sum", "prod", "min", "max",
+                       "Math", "Ops", "Summary", "Complex",
+                       # Dimensions
+                       "length", "dim", "nrow", "ncol", "names", "dimnames", "row.names",
+                       "length<-", "dim<-", "names<-", "dimnames<-", "row.names<-",
+                       # Model methods
+                       "coef", "fitted", "residuals", "predict", "simulate", "update",
+                       "vcov", "confint", "logLik", "AIC", "BIC", "nobs", "df.residual",
+                       "deviance", "extractAIC", "model.frame", "model.matrix",
+                       "anova", "effects", "weights", "variable.names", "case.names",
+                       # Plot
+                       "plot", "lines", "points", "text", "image", "contour", "persp",
+                       "pairs", "hist", "barplot", "boxplot", "dotchart",
+                       # Other common
+                       "c", "t", "rep", "rev", "sort", "unique", "duplicated", "anyDuplicated",
+                       "merge", "split", "cut", "cbind", "rbind", "stack", "unstack",
+                       "head", "tail", "within", "transform", "subset", "aggregate",
+                       "droplevels", "xtfrm", "labels", "levels", "levels<-",
+                       # Connection/IO
+                       "open", "close", "flush", "read", "write", "seek", "truncate",
+                       # Misc
+                       "all.equal", "Negate"
 )
 
 #' Generate NAMESPACE Content
@@ -50,7 +50,7 @@ KNOWN_S3_GENERICS <- c(
 #' @param blocks List of documentation blocks from parse_package().
 #' @return Character string of NAMESPACE content.
 #' @keywords internal
-generate_namespace <- function (blocks) {
+generate_namespace <- function(blocks) {
     exports <- character()
     export_classes <- character()
     s3methods <- list()
@@ -62,12 +62,7 @@ generate_namespace <- function (blocks) {
     pkg_generics <- find_package_generics(blocks)
 
     for (block in blocks) {
-        tags <- parse_tags(
-            block$lines,
-            block$object,
-            block$file,
-            block$line
-        )
+        tags <- parse_tags(block$lines, block$object, block$file, block$line)
 
         # Check for S3 method pattern in exports
         if (tags$export) {
@@ -85,17 +80,15 @@ generate_namespace <- function (blocks) {
         if (!is.null(tags$exportS3Method)) {
             s3m <- tags$exportS3Method
             if (!is.null(s3m$generic) && !is.null(s3m$class)) {
-                s3methods <- c(s3methods, list(list(
-                            generic = s3m$generic,
-                            class = s3m$class
-                        )))
+                s3methods <- c(s3methods, list(list(generic = s3m$generic,
+                            class = s3m$class)))
             } else if (!is.null(s3m$explicit)) {
                 # Try to parse from function name: generic.class
-                parts <- strsplit(block$object, "\\.") [[1]]
+                parts <- strsplit(block$object, "\\.")[[1]]
                 if (length(parts) >= 2) {
                     s3methods <- c(s3methods, list(list(
                                 generic = parts[1],
-                                class = paste(parts[- 1], collapse = ".")
+                                class = paste(parts[-1], collapse = ".")
                             )))
                 }
             }
@@ -143,7 +136,9 @@ generate_namespace <- function (blocks) {
     # Export classes (sorted)
     export_classes <- sort(unique(export_classes))
     if (length(export_classes) > 0) {
-        if (length(exports) > 0) lines <- c(lines, "")
+        if (length(exports) > 0) {
+            lines <- c(lines, "")
+        }
         for (cls in export_classes) {
             lines <- c(lines, paste0("exportClasses(", cls, ")"))
         }
@@ -151,10 +146,12 @@ generate_namespace <- function (blocks) {
 
     # S3 methods (sorted by generic, then class)
     if (length(s3methods) > 0) {
-        if (length(exports) > 0 || length(export_classes) > 0) lines <- c(lines, "")
+        if (length(exports) > 0 || length(export_classes) > 0) {
+            lines <- c(lines, "")
+        }
         s3methods <- s3methods[order(
-            vapply(s3methods, function (x) paste(x$generic, x$class), character(1))
-        )]
+                                     vapply(s3methods, function(x) paste(x$generic, x$class), character(1))
+            )]
         for (s3m in s3methods) {
             gen <- s3m$generic
             cls <- s3m$class
@@ -188,7 +185,9 @@ generate_namespace <- function (blocks) {
             by_pkg[[impf$pkg]] <- c(by_pkg[[impf$pkg]], impf$symbols)
         }
 
-        if (length(imports) == 0) lines <- c(lines, "")
+        if (length(imports) == 0) {
+            lines <- c(lines, "")
+        }
         for (pkg in sort(names(by_pkg))) {
             syms <- sort(unique(by_pkg[[pkg]]))
             for (sym in syms) {
@@ -215,11 +214,7 @@ generate_namespace <- function (blocks) {
 #' @param path Package root path.
 #' @param mode Either "overwrite" or "append".
 #' @keywords internal
-write_namespace <- function(
-    content,
-    path = ".",
-    mode = "overwrite"
-) {
+write_namespace <- function(content, path = ".", mode = "overwrite") {
     filepath <- file.path(path, "NAMESPACE")
 
     if (mode == "overwrite") {
@@ -244,34 +239,30 @@ write_namespace <- function(
                     before <- character()
                 }
                 if (end_pos[1] < length(existing)) {
-                    after <- existing[(end_pos[1] + 1) :length(existing)]
+                    after <- existing[(end_pos[1] + 1):length(existing)]
                 } else {
                     after <- character()
                 }
 
-                new_content <- c(
-                    before,
-                    start_marker,
-                    strsplit(content, "\n") [[1]],
-                    end_marker,
-                    after
-                )
+                new_content <- c(before, start_marker,
+                                 strsplit(content, "\n")[[1]], end_marker,
+                                 after)
             } else {
                 # No markers - append at end
                 new_content <- c(
-                    existing,
-                    "",
-                    start_marker,
-                    strsplit(content, "\n") [[1]],
-                    end_marker
+                                 existing,
+                                 "",
+                                 start_marker,
+                                 strsplit(content, "\n")[[1]],
+                                 end_marker
                 )
             }
         } else {
             # New file
             new_content <- c(
-                start_marker,
-                strsplit(content, "\n") [[1]],
-                end_marker
+                             start_marker,
+                             strsplit(content, "\n")[[1]],
+                             end_marker
             )
         }
 
@@ -299,11 +290,11 @@ detect_s3_method <- function(name, pkg_generics = character()) {
 
     # Try progressively longer generic names
     # e.g., for "as.data.frame.foo", try "as", "as.data", "as.data.frame"
-    parts <- strsplit(name, "\\.") [[1]]
+    parts <- strsplit(name, "\\.")[[1]]
 
     for (i in seq_len(length(parts) - 1)) {
         generic <- paste(parts[1:i], collapse = ".")
-        class <- paste(parts[(i + 1) :length(parts)], collapse = ".")
+        class <- paste(parts[(i + 1):length(parts)], collapse = ".")
 
         if (generic %in% all_generics) {
             return(list(generic = generic, class = class))
@@ -327,7 +318,9 @@ find_package_generics <- function(blocks) {
     generics <- character()
 
     for (f in files) {
-        if (!file.exists(f)) next
+        if (!file.exists(f)) {
+            next
+        }
         lines <- readLines(f, encoding = "UTF-8", warn = FALSE)
         # Find lines with UseMethod("name")
         m <- regmatches(lines, regexpr('UseMethod\\("([^"]+)"\\)', lines))

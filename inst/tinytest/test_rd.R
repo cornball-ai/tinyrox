@@ -117,3 +117,85 @@ test_name_override_no_usage <- function() {
   unlink(pkg, recursive = TRUE)
 }
 test_name_override_no_usage()
+
+# Test generate_package_rd uses base-R macros for title/description/author
+test_package_rd_macros <- function() {
+  pkg <- file.path(tempdir(), "macropkg")
+  dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+  writeLines(c(
+      "Package: macropkg",
+      "Title: A Macro-Style Package",
+      "Version: 0.1.0",
+      "Description: Demonstrates macro-based package Rd.",
+      "Authors@R: person('Test', 'Dev', email='t@example.com', role=c('aut','cre'))"
+    ), file.path(pkg, "DESCRIPTION"))
+  writeLines(c(
+      "#' macropkg: A Macro-Style Package",
+      "#'",
+      "#' Brief description here.",
+      "#'",
+      "#' Design notes paragraph one.",
+      "#'",
+      "#' Design notes paragraph two.",
+      "#' @keywords internal",
+      "\"_PACKAGE\""),
+      file.path(pkg, "R", "macropkg-package.R"))
+
+  tinyrox:::generate_all_rd(tinyrox:::parse_package(pkg), pkg)
+  rd <- paste(readLines(file.path(pkg, "man", "macropkg-package.Rd")),
+      collapse = "\n")
+
+  # Uses macros, not hardcoded content
+  expect_true(grepl("\\\\packageTitle\\{macropkg\\}", rd))
+  expect_true(grepl("\\\\packageDescription\\{macropkg\\}", rd))
+  expect_true(grepl("\\\\packageAuthor\\{macropkg\\}", rd))
+  expect_true(grepl("\\\\packageMaintainer\\{macropkg\\}", rd))
+  expect_true(grepl("\\\\packageIndices\\{macropkg\\}", rd))
+
+  # Hand-written details land in \details{}
+  expect_true(grepl("\\\\details\\{", rd))
+  expect_true(grepl("Design notes paragraph one\\.", rd))
+  expect_true(grepl("Design notes paragraph two\\.", rd))
+
+  # User's title text in the R file should NOT be hardcoded into \title{}
+  # (it comes from DESCRIPTION via \packageTitle)
+  expect_false(grepl("\\\\title\\{macropkg: A Macro-Style Package\\}", rd))
+
+  # keyword{internal} from @keywords still emitted
+  expect_true(grepl("\\\\keyword\\{internal\\}", rd))
+
+  unlink(pkg, recursive = TRUE)
+}
+test_package_rd_macros()
+
+# Test package Rd without any details still works (no empty \details{})
+test_package_rd_no_details <- function() {
+  pkg <- file.path(tempdir(), "nodetailspkg")
+  dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+  writeLines(c(
+      "Package: nodetailspkg", "Title: T", "Version: 0.1.0",
+      "Description: D.",
+      "Authors@R: person('A', 'B', email='a@b.c', role=c('aut','cre'))"
+    ), file.path(pkg, "DESCRIPTION"))
+  writeLines(c(
+      "#' nodetailspkg: Short.",
+      "#'",
+      "#' Description only.",
+      "#' @keywords internal",
+      "\"_PACKAGE\""),
+      file.path(pkg, "R", "nodetailspkg-package.R"))
+
+  tinyrox:::generate_all_rd(tinyrox:::parse_package(pkg), pkg)
+  rd <- paste(readLines(file.path(pkg, "man", "nodetailspkg-package.Rd")),
+      collapse = "\n")
+
+  # No \details{} block emitted when there's nothing to put in it
+  expect_false(grepl("\\\\details\\{", rd))
+
+  # Macros still present
+  expect_true(grepl("\\\\packageTitle\\{nodetailspkg\\}", rd))
+  expect_true(grepl("\\\\packageIndices\\{nodetailspkg\\}", rd))
+
+  unlink(pkg, recursive = TRUE)
+}
+test_package_rd_no_details()

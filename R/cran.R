@@ -7,31 +7,27 @@
 # Packages that typically require web service documentation
 WEBSERVICE_PACKAGES <- list(
 
-    hfhub = "https://huggingface.co/",
-    huggingface = "https://huggingface.co/",
-    openai = "https://platform.openai.com/",
-    gh = "https://github.com/",
-    googledrive = "https://drive.google.com/",
-    googlesheets4 = "https://docs.google.com/spreadsheets/",
-    aws.s3 = "https://aws.amazon.com/s3/",
-    bigrquery = "https://cloud.google.com/bigquery/"
+                            hfhub = "https://huggingface.co/",
+                            huggingface = "https://huggingface.co/",
+                            openai = "https://platform.openai.com/",
+                            gh = "https://github.com/",
+                            googledrive = "https://drive.google.com/",
+                            googlesheets4 = "https://docs.google.com/spreadsheets/",
+                            aws.s3 = "https://aws.amazon.com/s3/",
+                            bigrquery = "https://cloud.google.com/bigquery/"
 )
 
 # Common software/API names that should be quoted (case-insensitive matching)
 # These are checked in addition to package names from Imports/Suggests
-KNOWN_SOFTWARE_NAMES <- c(
-    "OpenAI", "Whisper", "GPT", "ChatGPT",
-    "TensorFlow", "PyTorch", "Keras", "CUDA",
-    "HuggingFace", "Hugging Face",
-    "GitHub", "GitLab", "Bitbucket",
-    "Docker", "Kubernetes",
-    "JAGS", "Stan", "BUGS", "WinBUGS", "OpenBUGS",
-    "Rcpp", "RcppArmadillo", "RcppEigen",
-    "Shiny", "Plumber",
-    "JSON", "XML", "YAML", "CSV", "Excel",
-    "SQLite", "PostgreSQL", "MySQL", "MongoDB",
-    "AWS", "Azure", "GCP"
-)
+KNOWN_SOFTWARE_NAMES <- c("OpenAI", "Whisper", "GPT", "ChatGPT",
+                          "TensorFlow", "PyTorch", "Keras", "CUDA",
+                          "HuggingFace", "Hugging Face", "GitHub", "GitLab",
+                          "Bitbucket", "Docker", "Kubernetes", "JAGS",
+                          "Stan", "BUGS", "WinBUGS", "OpenBUGS", "Rcpp",
+                          "RcppArmadillo", "RcppEigen", "Shiny", "Plumber",
+                          "JSON", "XML", "YAML", "CSV", "Excel", "SQLite",
+                          "PostgreSQL", "MySQL", "MongoDB", "AWS", "Azure",
+                          "GCP")
 
 #' Check DESCRIPTION for CRAN Compliance
 #'
@@ -56,7 +52,7 @@ KNOWN_SOFTWARE_NAMES <- c(
 #' # Clean up
 #' unlink(pkg, recursive = TRUE)
 #' }
-check_description_cran <- function (path = ".", fix = FALSE) {
+check_description_cran <- function(path = ".", fix = FALSE) {
     desc_file <- file.path(path, "DESCRIPTION")
     if (!file.exists(desc_file)) {
         stop("No DESCRIPTION file found in ", path, call. = FALSE)
@@ -66,8 +62,16 @@ check_description_cran <- function (path = ".", fix = FALSE) {
 
     # Get fields
 
-    title <- if ("Title" %in% colnames(desc)) desc[1, "Title"] else ""
-    description <- if ("Description" %in% colnames(desc)) desc[1, "Description"] else ""
+    if ("Title" %in% colnames(desc)) {
+        title <- desc[1, "Title"]
+    } else {
+        title <- ""
+    }
+    if ("Description" %in% colnames(desc)) {
+        description <- desc[1, "Description"]
+    } else {
+        description <- ""
+    }
 
     # Get package dependencies
     dep_packages <- get_dependency_packages(desc)
@@ -84,38 +88,35 @@ check_description_cran <- function (path = ".", fix = FALSE) {
     if (length(title_unquoted) > 0) {
         issues$title_unquoted <- title_unquoted
         warning("CRAN: Unquoted names in Title: ",
-            paste(title_unquoted, collapse = ", "),
-            "\n  Use single quotes: ",
-            paste0("'", title_unquoted, "'", collapse = ", "),
-            call. = FALSE)
+                paste(title_unquoted, collapse = ", "),
+                "\n  Use single quotes: ",
+                paste0("'", title_unquoted, "'", collapse = ", "),
+                call. = FALSE)
     }
 
     if (length(desc_unquoted) > 0) {
         issues$desc_unquoted <- desc_unquoted
         warning("CRAN: Unquoted names in Description: ",
-            paste(desc_unquoted, collapse = ", "),
-            "\n  Use single quotes: ",
-            paste0("'", desc_unquoted, "'", collapse = ", "),
-            call. = FALSE)
+                paste(desc_unquoted, collapse = ", "),
+                "\n  Use single quotes: ",
+                paste0("'", desc_unquoted, "'", collapse = ", "),
+                call. = FALSE)
     }
 
     # Check for missing web service links
     missing_links <- check_webservice_links(description, dep_packages)
     if (length(missing_links) > 0) {
         issues$missing_links <- missing_links
-        link_suggestions <- vapply(names(missing_links), function (pkg) {
-                paste0(pkg, " <", missing_links[[pkg]], ">")
-            }, character(1))
+        link_suggestions <- vapply(names(missing_links), function(pkg) {
+            paste0(pkg, " <", missing_links[[pkg]], ">")
+        }, character(1))
         warning("CRAN: Missing web service links in Description for: ",
-            paste(names(missing_links), collapse = ", "),
-            "\n  Consider adding: ", paste(link_suggestions, collapse = ", "),
-            call. = FALSE)
+                paste(names(missing_links), collapse = ", "),
+                "\n  Consider adding: ", paste(link_suggestions, collapse = ", "),
+                call. = FALSE)
     }
 
-    result <- list(
-        issues = issues,
-        has_issues = length(issues) > 0
-    )
+    result <- list(issues = issues, has_issues = length(issues) > 0)
 
     if (fix) {
         result$fixed_title <- quote_names_in_text(title, check_names)
@@ -131,7 +132,7 @@ check_description_cran <- function (path = ".", fix = FALSE) {
 #'
 #' @param desc DESCRIPTION matrix from read.dcf()
 #' @return Character vector of package names
-get_dependency_packages <- function (desc) {
+get_dependency_packages <- function(desc) {
     dep_fields <- c("Imports", "Suggests", "Depends", "Enhances", "LinkingTo")
     packages <- character()
 
@@ -139,7 +140,7 @@ get_dependency_packages <- function (desc) {
         if (field %in% colnames(desc) && !is.na(desc[1, field])) {
             field_val <- desc[1, field]
             # Split on comma, handle newlines
-            pkgs <- strsplit(field_val, ",") [[1]]
+            pkgs <- strsplit(field_val, ",")[[1]]
             # Remove version specs like (>= 1.0.0) and trim whitespace
             pkgs <- gsub("\\s*\\([^)]*\\)", "", pkgs)
             pkgs <- trimws(pkgs)
@@ -159,14 +160,18 @@ get_dependency_packages <- function (desc) {
 #' @param text Text to search
 #' @param names Names to look for
 #' @return Character vector of unquoted names found
-find_unquoted_names <- function (text, names) {
-    if (is.na(text) || text == "") return(character())
+find_unquoted_names <- function(text, names) {
+    if (is.na(text) || text == "") {
+        return(character())
+    }
 
     unquoted <- character()
 
     for (name in names) {
         # Skip very short names to avoid false positives
-        if (nchar(name) < 2) next
+        if (nchar(name) < 2) {
+            next
+        }
 
         # Pattern: name NOT preceded by ' and NOT followed by '
         # Use word boundaries to avoid partial matches
@@ -184,7 +189,8 @@ find_unquoted_names <- function (text, names) {
             # Check if ALL occurrences are quoted
             # Remove quoted versions and see if any remain
             text_without_quoted <- gsub(pattern_quoted, "", text)
-            if (grepl(pattern_unquoted, text_without_quoted, ignore.case = FALSE)) {
+            if (grepl(pattern_unquoted, text_without_quoted,
+                      ignore.case = FALSE)) {
                 unquoted <- c(unquoted, name)
             }
         }
@@ -200,11 +206,15 @@ find_unquoted_names <- function (text, names) {
 #' @param text Text to modify
 #' @param names Names to quote
 #' @return Modified text with names quoted
-quote_names_in_text <- function (text, names) {
-    if (is.na(text) || text == "") return(text)
+quote_names_in_text <- function(text, names) {
+    if (is.na(text) || text == "") {
+        return(text)
+    }
 
     for (name in names) {
-        if (nchar(name) < 2) next
+        if (nchar(name) < 2) {
+            next
+        }
 
         escaped_name <- escape_regex(name)
         pattern_quoted <- paste0("'", escaped_name, "'")
@@ -233,7 +243,7 @@ quote_names_in_text <- function (text, names) {
 #' @param description Description text
 #' @param packages Package names from dependencies
 #' @return Named list of packages missing links (name = URL)
-check_webservice_links <- function (description, packages) {
+check_webservice_links <- function(description, packages) {
     missing <- list()
 
     for (pkg in packages) {
@@ -255,10 +265,11 @@ check_webservice_links <- function (description, packages) {
 #'
 #' @param x String to escape
 #' @return Escaped string safe for use in regex
-escape_regex <- function (x) {
+escape_regex <- function(x) {
     # Escape special regex metacharacters
     # Order matters: escape backslash first
-    chars <- c("\\", ".", "|", "(", ")", "[", "]", "{", "}", "^", "$", "+", "*", "?")
+    chars <- c("\\", ".", "|", "(", ")", "[", "]", "{", "}", "^",
+               "$", "+", "*", "?")
     for (ch in chars) {
         x <- gsub(ch, paste0("\\", ch), x, fixed = TRUE)
     }
@@ -287,7 +298,7 @@ escape_regex <- function (x) {
 #' # Clean up
 #' unlink(pkg, recursive = TRUE)
 #' }
-fix_description_cran <- function (path = ".", backup = TRUE) {
+fix_description_cran <- function(path = ".", backup = TRUE) {
     desc_file <- file.path(path, "DESCRIPTION")
     if (!file.exists(desc_file)) {
         stop("No DESCRIPTION file found in ", path, call. = FALSE)
@@ -365,14 +376,14 @@ fix_description_cran <- function (path = ".", backup = TRUE) {
 #' # Clean up
 #' unlink(pkg, recursive = TRUE)
 #' }
-check_code_cran <- function (path = ".") {
+check_code_cran <- function(path = ".") {
     r_dir <- file.path(path, "R")
     if (!dir.exists(r_dir)) {
         stop("No R/ directory found in ", path, call. = FALSE)
     }
 
     r_files <- list.files(r_dir, pattern = "\\.R$", full.names = TRUE,
-        ignore.case = TRUE)
+                          ignore.case = TRUE)
 
     if (length(r_files) == 0) {
         message("No R files found")
@@ -394,7 +405,7 @@ check_code_cran <- function (path = ".") {
         for (fname in names(all_issues)) {
             for (issue in all_issues[[fname]]) {
                 warning("CRAN [", fname, ":", issue$line, "]: ", issue$message,
-                    call. = FALSE)
+                        call. = FALSE)
             }
         }
     }
@@ -407,14 +418,16 @@ check_code_cran <- function (path = ".") {
 #' @param lines Character vector of code lines
 #' @param filename Filename for reporting
 #' @return List of issues
-check_code_lines <- function (lines, filename) {
+check_code_lines <- function(lines, filename) {
     issues <- list()
 
     for (i in seq_along(lines)) {
         line <- lines[i]
 
         # Skip comments
-        if (grepl("^\\s*#", line)) next
+        if (grepl("^\\s*#", line)) {
+            next
+        }
 
         # Strip string literals so patterns inside quotes don't trigger
         # false positives (e.g., grepl("\\bcat\\s*\\(", ...) matching cat())
@@ -428,10 +441,8 @@ check_code_lines <- function (lines, filename) {
             # Exclude common false positives like T.test, F.stat, etc
             if (!grepl("\\bT\\.", line) && !grepl("\\bF\\.", line) &&
                 !grepl("\".*[TF].*\"", line) && !grepl("'.*[TF].*'", line)) {
-                issues <- c(issues, list(list(
-                            line = i,
-                            message = "Use TRUE/FALSE instead of T/F"
-                        )))
+                issues <- c(issues, list(list(line = i,
+                            message = "Use TRUE/FALSE instead of T/F")))
             }
         }
 
@@ -525,18 +536,15 @@ check_code_lines <- function (lines, filename) {
 #' # Clean up
 #' unlink(pkg, recursive = TRUE)
 #' }
-check_cran <- function (path = ".") {
+check_cran <- function(path = ".") {
     message("Checking CRAN compliance...")
 
     desc_result <- check_description_cran(path)
     code_result <- check_code_cran(path)
     example_result <- check_examples_cran(path)
 
-    all_issues <- list(
-        description = desc_result$issues,
-        code = code_result,
-        examples = example_result
-    )
+    all_issues <- list(description = desc_result$issues, code = code_result,
+                       examples = example_result)
 
     has_issues <- desc_result$has_issues || length(code_result) > 0 ||
     length(example_result) > 0
@@ -571,14 +579,14 @@ check_cran <- function (path = ".") {
 #' # Clean up
 #' unlink(pkg, recursive = TRUE)
 #' }
-check_examples_cran <- function (path = ".") {
+check_examples_cran <- function(path = ".") {
     r_dir <- file.path(path, "R")
     if (!dir.exists(r_dir)) {
         stop("No R/ directory found in ", path, call. = FALSE)
     }
 
     r_files <- list.files(r_dir, pattern = "\\.R$", full.names = TRUE,
-        ignore.case = TRUE)
+                          ignore.case = TRUE)
 
     if (length(r_files) == 0) {
         return(character())
@@ -600,22 +608,22 @@ check_examples_cran <- function (path = ".") {
 
     if (length(missing_examples) > 0) {
         warning("CRAN: Exported functions without examples: ",
-            paste(missing_examples, collapse = ", "),
-            call. = FALSE)
+                paste(missing_examples, collapse = ", "),
+                call. = FALSE)
     }
 
     if (length(dontrun_fns) > 0) {
         warning("CRAN: Examples use \\dontrun (replace with \\donttest ",
-            "unless truly non-executable): ",
-            paste(dontrun_fns, collapse = ", "),
-            call. = FALSE)
+                "unless truly non-executable): ",
+                paste(dontrun_fns, collapse = ", "),
+                call. = FALSE)
     }
 
     if (length(long_lines) > 0) {
         warning("CRAN: Example lines exceed 100 characters ",
-            "(will be truncated in PDF manual):\n",
-            paste("  ", long_lines, collapse = "\n"),
-            call. = FALSE)
+                "(will be truncated in PDF manual):\n",
+                paste("  ", long_lines, collapse = "\n"),
+                call. = FALSE)
     }
 
     invisible(missing_examples)
@@ -627,7 +635,7 @@ check_examples_cran <- function (path = ".") {
 #'
 #' @param lines Character vector of file lines
 #' @return Character vector of function names missing examples
-find_exports_without_examples <- function (lines) {
+find_exports_without_examples <- function(lines) {
     missing <- character()
     in_doc_block <- FALSE
     has_export <- FALSE
@@ -678,7 +686,7 @@ find_exports_without_examples <- function (lines) {
 #'
 #' @param lines Character vector of file lines
 #' @return Character vector of function names using dontrun
-find_dontrun_examples <- function (lines) {
+find_dontrun_examples <- function(lines) {
     found <- character()
     in_doc_block <- FALSE
     has_export <- FALSE
@@ -723,7 +731,7 @@ find_dontrun_examples <- function (lines) {
 #' @param lines Character vector of file lines
 #' @param filename Filename for reporting
 #' @return Character vector of warnings (file:line format)
-find_long_example_lines <- function (lines, filename) {
+find_long_example_lines <- function(lines, filename) {
     found <- character()
     in_examples <- FALSE
 
@@ -751,7 +759,7 @@ find_long_example_lines <- function (lines, filename) {
             content <- sub("^#'\\s?", "", line)
             if (nchar(content) > 100) {
                 found <- c(found,
-                    paste0(filename, ":", i, " (", nchar(content), " chars)"))
+                           paste0(filename, ":", i, " (", nchar(content), " chars)"))
             }
         }
     }
@@ -763,9 +771,10 @@ find_long_example_lines <- function (lines, filename) {
 #'
 #' @param line Code line potentially containing function definition
 #' @return Function name or NULL
-extract_function_name <- function (line) {
+extract_function_name <- function(line) {
     # Match "name <- function" or "name = function"
-    match <- regmatches(line, regexec("^([A-Za-z_.][A-Za-z0-9_.]*)\\s*(<-|=)\\s*function", line)) [[1]]
+    match <- regmatches(line,
+                        regexec("^([A-Za-z_.][A-Za-z0-9_.]*)\\s*(<-|=)\\s*function", line))[[1]]
     if (length(match) >= 2) {
         return(match[2])
     }

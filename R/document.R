@@ -39,14 +39,15 @@
 #' # Clean up
 #' unlink(pkg, recursive = TRUE)
 #' }
-document <- function (path = ".", namespace = c("overwrite", "append", "none"),
-                      cran_check = TRUE) {
+document <- function(path = ".",
+                     namespace = c("overwrite", "append", "none"),
+                     cran_check = TRUE) {
     namespace <- match.arg(namespace)
 
     # Validate path
     if (!file.exists(file.path(path, "DESCRIPTION"))) {
         stop("No DESCRIPTION file found in ", path,
-            ". Is this an R package?", call. = FALSE)
+             ". Is this an R package?", call. = FALSE)
     }
 
     # Check CRAN compliance
@@ -79,10 +80,7 @@ document <- function (path = ".", namespace = c("overwrite", "append", "none"),
         message("Updated NAMESPACE.")
     }
 
-    invisible(list(
-            rd_files = rd_files,
-            namespace = ns_file
-        ))
+    invisible(list(rd_files = rd_files, namespace = ns_file))
 }
 
 #' Clean Generated Files
@@ -110,7 +108,7 @@ document <- function (path = ".", namespace = c("overwrite", "append", "none"),
 #' # Clean up
 #' unlink(pkg, recursive = TRUE)
 #' }
-clean <- function (path = ".", namespace = FALSE) {
+clean <- function(path = ".", namespace = FALSE) {
     man_dir <- file.path(path, "man")
 
     if (dir.exists(man_dir)) {

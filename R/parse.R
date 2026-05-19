@@ -10,7 +10,7 @@
 #'   - type: "function", "data", or "other"
 #'   - formals: for functions, the formal arguments
 #' @keywords internal
-parse_file <- function (file) {
+parse_file <- function(file) {
     lines <- readLines(file, encoding = "UTF-8", warn = FALSE)
 
     # Find documentation blocks (consecutive #' lines)
@@ -24,14 +24,14 @@ parse_file <- function (file) {
     blocks <- list()
     current_block <- doc_lines[1]
 
-    for (i in seq_along(doc_lines)[- 1]) {
+    for (i in seq_along(doc_lines)[-1]) {
         prev_line <- doc_lines[i - 1]
         curr_line <- doc_lines[i]
 
         # Check if gap between prev and curr consists only of comments or blanks
         gap_ok <- TRUE
         if (curr_line > prev_line + 1) {
-            gap_lines <- lines[(prev_line + 1) :(curr_line - 1)]
+            gap_lines <- lines[(prev_line + 1):(curr_line - 1)]
             # Gap is OK if all intervening lines are comments or blank
             gap_ok <- all(grepl("^\\s*#|^\\s*$", gap_lines))
         }
@@ -58,7 +58,8 @@ parse_file <- function (file) {
         next_line <- max(block_lines) + 1
 
         # Skip blank lines
-        while (next_line <= length(lines) && grepl("^\\s*$", lines[next_line])) {
+        while (next_line <= length(lines) &&
+            grepl("^\\s*$", lines[next_line])) {
             next_line <- next_line + 1
         }
 
@@ -79,25 +80,21 @@ parse_file <- function (file) {
             first_def_line <- trimws(definition_lines[1])
             if (first_def_line == "NULL") {
                 # Include block for namespace processing only
-                result <- c(result, list(list(
-                            lines = comment_text,
+                result <- c(result, list(list(lines = comment_text,
                             object = ".namespace_only",
-                            type = "namespace_only",
-                            formals = NULL,
-                            file = file,
-                            line = block_lines[1]
-                        )))
+                            type = "namespace_only", formals = NULL,
+                            file = file, line = block_lines[1])))
             }
             next
         }
 
         result <- c(result, list(list(
-                    lines = comment_text,
-                    object = obj_info$name,
-                    type = obj_info$type,
-                    formals = obj_info$formals,
-                    file = file,
-                    line = block_lines[1]
+                                      lines = comment_text,
+                                      object = obj_info$name,
+                                      type = obj_info$type,
+                                      formals = obj_info$formals,
+                                      file = file,
+                                      line = block_lines[1]
                 )))
     }
 
@@ -113,9 +110,9 @@ parse_file <- function (file) {
 #' @param line_num The line number (for error messages).
 #' @return A list with name, type, and formals, or NULL if not a definition.
 #' @keywords internal
-parse_object_definition <- function (text, file, line_num) {
+parse_object_definition <- function(text, file, line_num) {
     # Get just the first line
-    first_line <- strsplit(text, "\n") [[1]][1]
+    first_line <- strsplit(text, "\n")[[1]][1]
 
     # Skip indented definitions (likely methods inside nn_module/R6 classes)
     # Top-level definitions start at column 1 (no leading whitespace)
@@ -126,11 +123,7 @@ parse_object_definition <- function (text, file, line_num) {
 
     # Check for "_PACKAGE" directive (package documentation)
     if (grepl('^"_PACKAGE"$', trimws(first_line))) {
-        return(list(
-                name = "_PACKAGE",
-                type = "package",
-                formals = NULL
-            ))
+        return(list(name = "_PACKAGE", type = "package", formals = NULL))
     }
 
     # Match: name <- or name =
@@ -144,11 +137,11 @@ parse_object_definition <- function (text, file, line_num) {
     backtick_pattern <- "^\\s*`([^`]+)`\\s*(<-|=)\\s*"
     backtick_match <- regexec(backtick_pattern, first_line)
 
-    if (match[[1]][1] != - 1) {
-        name <- regmatches(first_line, match) [[1]][2]
+    if (match[[1]][1] != -1) {
+        name <- regmatches(first_line, match)[[1]][2]
         pattern_used <- pattern
-    } else if (backtick_match[[1]][1] != - 1) {
-        name <- regmatches(first_line, backtick_match) [[1]][2]
+    } else if (backtick_match[[1]][1] != -1) {
+        name <- regmatches(first_line, backtick_match)[[1]][2]
         pattern_used <- backtick_pattern
     } else {
         return(NULL)
@@ -161,30 +154,18 @@ parse_object_definition <- function (text, file, line_num) {
         # It's a function - extract formals from potentially multi-line text
         formals_list <- extract_formals(rest)
 
-        return(list(
-                name = name,
-                type = "function",
-                formals = formals_list
-            ))
+        return(list(name = name, type = "function", formals = formals_list))
     }
 
     # Check if it's a torch nn_module (extract formals from initialize method)
     if (grepl("^(torch::)?nn_module\\s*\\(", rest)) {
         formals_list <- extract_nn_module_formals(rest)
 
-        return(list(
-                name = name,
-                type = "nn_module",
-                formals = formals_list
-            ))
+        return(list(name = name, type = "nn_module", formals = formals_list))
     }
 
     # Not a function - treat as data object
-    list(
-        name = name,
-        type = "data",
-        formals = NULL
-    )
+    list(name = name, type = "data", formals = NULL)
 }
 
 #' Extract Function Formals from Code
@@ -192,22 +173,28 @@ parse_object_definition <- function (text, file, line_num) {
 #' @param code Code starting with "function("
 #' @return List with 'names' (argument names) and 'usage' (formatted for Rd).
 #' @keywords internal
-extract_formals <- function (code) {
+extract_formals <- function(code) {
     # Simple approach: extract content between first ( and matching )
     # This handles most cases but not multi-line signatures
 
     # Find the opening paren
     start <- regexpr("\\(", code)
-    if (start == - 1) return(list(names = character(), usage = character()))
+    if (start == -1) {
+        return(list(names = character(), usage = character()))
+    }
 
     # Count parens to find the closing one
-    chars <- strsplit(substr(code, start, nchar(code)), "") [[1]]
+    chars <- strsplit(substr(code, start, nchar(code)), "")[[1]]
     depth <- 0
     end <- 0
 
     for (i in seq_along(chars)) {
-        if (chars[i] == "(") depth <- depth + 1
-        if (chars[i] == ")") depth <- depth - 1
+        if (chars[i] == "(") {
+            depth <- depth + 1
+        }
+        if (chars[i] == ")") {
+            depth <- depth - 1
+        }
         if (depth == 0) {
             end <- i
             break
@@ -235,13 +222,13 @@ extract_formals <- function (code) {
 #' @return List with 'names' (argument names) and 'usage' (formatted for Rd),
 #'   or NULL if initialize method not found.
 #' @keywords internal
-extract_nn_module_formals <- function (code) {
+extract_nn_module_formals <- function(code) {
     # Find initialize = function(...) pattern
     # Can be on same line or subsequent lines
     init_pattern <- "initialize\\s*=\\s*function\\s*\\("
     init_match <- regexpr(init_pattern, code)
 
-    if (init_match == - 1) {
+    if (init_match == -1) {
         return(NULL)
     }
 
@@ -258,7 +245,7 @@ extract_nn_module_formals <- function (code) {
 #' @param text Text containing function arguments.
 #' @return List with 'names' (argument names) and 'usage' (formatted for Rd).
 #' @keywords internal
-parse_formals_text <- function (text) {
+parse_formals_text <- function(text) {
     if (nchar(trimws(text)) == 0) {
         return(list(names = character(), usage = character()))
     }
@@ -267,23 +254,20 @@ parse_formals_text <- function (text) {
     # This is more robust than regex
     fn_text <- paste0("function(", text, ") NULL")
 
-    parsed <- tryCatch(
-        parse(text = fn_text),
-        error = function (e) NULL
-    )
+    parsed <- tryCatch(parse(text = fn_text), error = function(e) NULL)
 
     if (is.null(parsed)) {
         # Fallback: simple split - return just names, no usage
-        parts <- strsplit(text, ",") [[1]]
+        parts <- strsplit(text, ",")[[1]]
         args <- vapply(parts, function(p) {
-                # Extract name before = if present
-                p <- trimws(p)
-                if (grepl("=", p)) {
-                    trimws(sub("\\s*=.*", "", p))
-                } else {
-                    p
-                }
-            }, character(1))
+            # Extract name before = if present
+            p <- trimws(p)
+            if (grepl("=", p)) {
+                trimws(sub("\\s*=.*", "", p))
+            } else {
+                p
+            }
+        }, character(1))
         args <- args[nchar(args) > 0]
         return(list(names = args, usage = args))
     }
@@ -295,19 +279,19 @@ parse_formals_text <- function (text) {
 
     # Build usage strings with defaults
     usage <- vapply(arg_names, function(nm) {
-            val <- fmls[[nm]]
-            if (missing(val) || identical(val, quote(expr =))) {
-                # No default
-                nm
-            } else {
-                # Has default - deparse it
-                default <- deparse(val, width.cutoff = 500L)
-                if (length(default) > 1) {
-                    default <- paste(default, collapse = " ")
-                }
-                paste0(nm, " = ", default)
+        val <- fmls[[nm]]
+        if (missing(val) || identical(val, quote(expr =))) {
+            # No default
+            nm
+        } else {
+            # Has default - deparse it
+            default <- deparse(val, width.cutoff = 500L)
+            if (length(default) > 1) {
+                default <- paste(default, collapse = " ")
             }
-        }, character(1))
+            paste0(nm, " = ", default)
+        }
+    }, character(1))
 
     list(names = arg_names, usage = unname(usage))
 }
