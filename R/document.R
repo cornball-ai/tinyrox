@@ -12,6 +12,7 @@
 #' }
 #' @param cran_check Run CRAN compliance checks (DESCRIPTION quoting,
 #'   web service links, code issues, missing examples). Default TRUE.
+#' @param silent Operate less verbose without messages. Default FALSE.
 #' @return Invisibly returns a list with:
 #'   - rd_files: character vector of generated Rd file paths
 #'   - namespace: path to NAMESPACE file (or NULL if mode="none")
@@ -41,7 +42,7 @@
 #' }
 document <- function(path = ".",
                      namespace = c("overwrite", "append", "none"),
-                     cran_check = TRUE) {
+                     cran_check = TRUE, silent = FALSE) {
     namespace <- match.arg(namespace)
 
     # Validate path
@@ -56,31 +57,31 @@ document <- function(path = ".",
     }
 
     # Parse all R files
-    message("Parsing R files...")
+    if (!silent) message("Parsing R files...")
     blocks <- parse_package(path)
 
     if (length(blocks) == 0) {
-        message("No documentation blocks found.")
+        if (!silent) message("No documentation blocks found.")
         return(invisible(list(rd_files = character(), namespace = NULL)))
     }
 
-    message("Found ", length(blocks), " documentation block(s).")
+    if (!silent) message("Found ", length(blocks), " documentation block(s).")
 
     # Generate Rd files
-    message("Generating Rd files...")
+    if (!silent) message("Generating Rd files...")
     rd_files <- generate_all_rd(blocks, path)
-    message("Generated ", length(rd_files), " Rd file(s).")
+    if (!silent) message("Generated ", length(rd_files), " Rd file(s).")
 
     # Generate NAMESPACE
     ns_file <- NULL
     if (namespace != "none") {
-        message("Generating NAMESPACE...")
+        if (!silent) message("Generating NAMESPACE...")
         ns_content <- generate_namespace(blocks)
         ns_file <- write_namespace(ns_content, path, namespace)
-        message("Updated NAMESPACE.")
+        if (!silent) message("Updated NAMESPACE.")
     }
 
-    message("Left DESCRIPTION alone as one should.")
+    if (!silent) message("Leaving DESCRIPTION alone as one should.")
 
     invisible(list(rd_files = rd_files, namespace = ns_file))
 }
