@@ -80,6 +80,8 @@ document <- function(path = ".",
         message("Updated NAMESPACE.")
     }
 
+    message("Left DESCRIPTION alone as one should.")
+
     invisible(list(rd_files = rd_files, namespace = ns_file))
 }
 
