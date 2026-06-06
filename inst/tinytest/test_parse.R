@@ -45,3 +45,18 @@ result <- tinyrox:::parse_formals_text("")
 expect_equal(result$names, character())
 
 expect_equal(tinyrox:::parse_formals_text("...")$names, "...")
+
+# Regression: a multi-line signature longer than the old fixed 20-line lookahead
+# must be captured in full (formals were silently truncated before).
+long_args <- paste0("a", 1:30, " = NULL", collapse = ",\n  ")
+big_src <- c("#' Big", "#' @export",
+             paste0("big_fn <- function(\n  ", long_args, ") {"),
+             "  NULL", "}")
+tmp <- tempfile(fileext = ".R")
+writeLines(big_src, tmp)
+big <- Filter(function(o) identical(o$object, "big_fn"),
+              tinyrox:::parse_file(tmp))[[1]]
+expect_equal(length(big$formals$names), 30L)
+expect_equal(big$formals$names[30], "a30")
+expect_true(all(grepl("= NULL$", big$formals$usage)))
+unlink(tmp)

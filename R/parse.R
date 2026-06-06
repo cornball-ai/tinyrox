@@ -67,9 +67,33 @@ parse_file <- function(file) {
             next
         }
 
-        # For multi-line function definitions, collect lines until we have complete signature
-        # Look ahead up to 20 lines to capture full function signature
-        definition_lines <- lines[next_line:min(next_line + 20, length(lines))]
+        # Collect the definition. For a multi-line function signature, read until
+        # its parentheses balance rather than a fixed window (a fixed window
+        # truncates long signatures and breaks formals parsing); a definition
+        # with no opening paren is a one-liner and stops after its first line.
+        end_line <- next_line
+        depth <- 0L
+        seen_paren <- FALSE
+        repeat {
+            chars <- strsplit(lines[end_line], "")[[1]]
+            for (ch in chars) {
+                if (ch == "(") {
+                    depth <- depth + 1L
+                    seen_paren <- TRUE
+                } else if (ch == ")") {
+                    depth <- depth - 1L
+                }
+            }
+            if (!seen_paren || (depth <= 0L)) {
+                break
+            }
+            if (end_line >= length(lines) ||
+                end_line - next_line >= 1000L) {
+                break
+            }
+            end_line <- end_line + 1L
+        }
+        definition_lines <- lines[next_line:end_line]
         definition_text <- paste(definition_lines, collapse = "\n")
 
         # Parse the object definition
