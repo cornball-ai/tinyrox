@@ -669,9 +669,10 @@ generate_rd_grouped <- function(topic, entries, all_tags,
 #'
 #' @param blocks List of documentation blocks from parse_package().
 #' @param path Package root path.
+#' @param silent Boolean flag whether operation whould be silent
 #' @return Character vector of generated file paths.
 #' @keywords internal
-generate_all_rd <- function(blocks, path = ".") {
+generate_all_rd <- function(blocks, path = ".", silent = FALSE) {
     generated <- character()
 
     # Find package-defined S3 generics for proper \method{}{} usage formatting
@@ -776,7 +777,7 @@ generate_all_rd <- function(blocks, path = ".") {
                 formal_names <- block$formals$names
                 undoc <- setdiff(formal_names, names(tags$params))
                 undoc <- setdiff(undoc, "...")
-                if (length(undoc) > 0) {
+                if (length(undoc) > 0 && !silent) {
                     warning("Undocumented parameters in ", tags$name, ": ",
                             paste(undoc, collapse = ", "),
                             call. = FALSE)
@@ -795,7 +796,7 @@ generate_all_rd <- function(blocks, path = ".") {
                     formal_names <- entry$block$formals$names
                     undoc <- setdiff(formal_names, names(entry$tags$params))
                     undoc <- setdiff(undoc, "...")
-                    if (length(undoc) > 0) {
+                    if (length(undoc) > 0 && !silent) {
                         warning("Undocumented parameters in ", entry$tags$name, ": ",
                                 paste(undoc, collapse = ", "),
                                 call. = FALSE)

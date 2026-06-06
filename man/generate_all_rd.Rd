@@ -3,12 +3,14 @@
 \alias{generate_all_rd}
 \title{Generate All Rd Files for a Package}
 \usage{
-generate_all_rd(blocks, path = ".")
+generate_all_rd(blocks, path = ".", silent = FALSE)
 }
 \arguments{
 \item{blocks}{List of documentation blocks from parse_package().}
 
 \item{path}{Package root path.}
+
+\item{silent}{Boolean flag whether operation whould be silent}
 }
 \value{
 Character vector of generated file paths.

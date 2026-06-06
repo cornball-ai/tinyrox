@@ -4,7 +4,7 @@
 \title{Generate Documentation for an R Package}
 \usage{
 document(path = ".", namespace = c("overwrite", "append", "none"),
-         cran_check = TRUE)
+         cran_check = TRUE, silent = FALSE)
 }
 \arguments{
 \item{path}{Path to package root directory. Default is current directory.}
@@ -18,6 +18,8 @@ document(path = ".", namespace = c("overwrite", "append", "none"),
 
 \item{cran_check}{Run CRAN compliance checks (DESCRIPTION quoting,
 web service links, code issues, missing examples). Default TRUE.}
+
+\item{silent}{Operate less verbose without messages. Default FALSE.}
 }
 \value{
 Invisibly returns a list with:
