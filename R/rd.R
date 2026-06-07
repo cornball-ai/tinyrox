@@ -802,7 +802,7 @@ generate_all_rd <- function(blocks, path = ".", cran_check = TRUE) {
                     etags <- entry$tags
                     if (length(etags$inheritParams) > 0) {
                         etags <- resolve_inherit_params(etags, all_tags,
-                                                        entry$block$formals)
+                            entry$block$formals)
                     }
                     documented <- c(documented, names(etags$params))
                 }

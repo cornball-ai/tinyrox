@@ -57,31 +57,47 @@ document <- function(path = ".",
     }
 
     # Parse all R files
-    if (!silent) message("Parsing R files...")
+    if (!silent) {
+        message("Parsing R files...")
+    }
     blocks <- parse_package(path)
 
     if (length(blocks) == 0) {
-        if (!silent) message("No documentation blocks found.")
+        if (!silent) {
+            message("No documentation blocks found.")
+        }
         return(invisible(list(rd_files = character(), namespace = NULL)))
     }
 
-    if (!silent) message("Found ", length(blocks), " documentation block(s).")
+    if (!silent) {
+        message("Found ", length(blocks), " documentation block(s).")
+    }
 
     # Generate Rd files
-    if (!silent) message("Generating Rd files...")
+    if (!silent) {
+        message("Generating Rd files...")
+    }
     rd_files <- generate_all_rd(blocks, path, cran_check)
-    if (!silent) message("Generated ", length(rd_files), " Rd file(s).")
+    if (!silent) {
+        message("Generated ", length(rd_files), " Rd file(s).")
+    }
 
     # Generate NAMESPACE
     ns_file <- NULL
     if (namespace != "none") {
-        if (!silent) message("Generating NAMESPACE...")
+        if (!silent) {
+            message("Generating NAMESPACE...")
+        }
         ns_content <- generate_namespace(blocks)
         ns_file <- write_namespace(ns_content, path, namespace)
-        if (!silent) message("Updated NAMESPACE.")
+        if (!silent) {
+            message("Updated NAMESPACE.")
+        }
     }
 
-    if (!silent) message("Leaving DESCRIPTION alone as one should.")
+    if (!silent) {
+        message("Leaving DESCRIPTION alone as one should.")
+    }
 
     invisible(list(rd_files = rd_files, namespace = ns_file))
 }
