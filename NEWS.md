@@ -1,3 +1,7 @@
+# tinyrox 0.3.3.3
+
+* Render `@section` blocks in the Rd for ordinary functions and `@rdname` groups. They were parsed but only emitted for package-level docs, so a function's `@section` was silently dropped (#10).
+
 # tinyrox 0.3.3.2
 
 * Fix false "undocumented parameters" warning for functions documented via a sibling block in an `@rdname` group; the check is now group-wide. Also gate the warning on `cran_check` rather than `silent` (#12).
