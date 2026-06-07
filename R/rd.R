@@ -1,3 +1,22 @@
+#' Render User-Defined @section Blocks to Rd
+#'
+#' Emits one `\\section{title}{content}` per parsed `@section`. Content is
+#' passed through verbatim as Rd (tinyrox does no markdown parsing), matching
+#' how the title-only macros elsewhere treat hand-written Rd markup.
+#'
+#' @param sections List of `list(title=, content=)` from parse_tags().
+#' @return Character vector of Rd lines (empty when there are no sections).
+#' @keywords internal
+render_sections <- function(sections) {
+    lines <- character()
+    for (sec in sections) {
+        lines <- c(lines, paste0("\\section{", escape_rd(sec$title), "}{"))
+        lines <- c(lines, sec$content)
+        lines <- c(lines, "}")
+    }
+    lines
+}
+
 #' Generate Rd File Content
 #'
 #' @param tags Parsed tags from parse_tags().
@@ -96,6 +115,9 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL,
         lines <- c(lines, escape_rd(tags$details))
         lines <- c(lines, "}")
     }
+
+    # User-defined @section blocks (after details, like roxygen2)
+    lines <- c(lines, render_sections(tags$sections))
 
     # References
     if (!is.null(tags$references)) {
@@ -625,6 +647,13 @@ generate_rd_grouped <- function(topic, entries, all_tags,
         lines <- c(lines, "}")
     }
 
+    # User-defined @section blocks - concatenated from all blocks
+    all_sections <- list()
+    for (entry in entries) {
+        all_sections <- c(all_sections, entry$tags$sections)
+    }
+    lines <- c(lines, render_sections(all_sections))
+
     # \references{} - from primary
     if (!is.null(primary$tags$references)) {
         lines <- c(lines, "\\references{")
@@ -881,13 +910,7 @@ generate_package_rd <- function(tags, pkg_name, source_file) {
     }
 
     # User-defined sections (@section Title: ...)
-    if (!is.null(tags$sections)) {
-        for (sec in tags$sections) {
-            lines <- c(lines, paste0("\\section{", escape_rd(sec$title), "}{"))
-            lines <- c(lines, sec$content) # Content may have Rd markup, don't escape
-            lines <- c(lines, "}")
-        }
-    }
+    lines <- c(lines, render_sections(tags$sections))
 
     # Auto-generated function index
     lines <- c(lines, paste0("\\section{Package Content}{\\packageIndices{",

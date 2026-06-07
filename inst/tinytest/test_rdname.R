@@ -236,6 +236,38 @@ expect_true(grepl("func_a\\(1\\)", rd_c))
 expect_true(grepl("func_b\\(2\\)", rd_c))
 
 
+# --- Test: @section blocks from all members of an @rdname group (#10) ---
+
+blocks_sec <- list(
+  list(
+    lines = c("Topic", "", "Desc.", "@section Alpha:", "Alpha body.",
+               "@rdname secgroup", "@export"),
+    object = "sec_a",
+    type = "function",
+    formals = list(names = "x", usage = "x"),
+    file = "test.R",
+    line = 1
+  ),
+  list(
+    lines = c("@section Beta:", "Beta body.", "@rdname secgroup", "@export"),
+    object = "sec_b",
+    type = "function",
+    formals = list(names = "y", usage = "y"),
+    file = "test.R",
+    line = 10
+  )
+)
+tags_sa <- tinyrox:::parse_tags(blocks_sec[[1]]$lines, "sec_a")
+tags_sb <- tinyrox:::parse_tags(blocks_sec[[2]]$lines, "sec_b")
+entries_s <- list(
+  list(tags = tags_sa, block = blocks_sec[[1]]),
+  list(tags = tags_sb, block = blocks_sec[[2]])
+)
+rd_s <- tinyrox:::generate_rd_grouped("secgroup", entries_s, list())
+expect_true(grepl("\\\\section\\{Alpha\\}\\{", rd_s))
+expect_true(grepl("\\\\section\\{Beta\\}\\{", rd_s))
+
+
 # --- Test 7: @rdname params documented on a sibling block (issue #12) ---
 # A function whose formals are documented on the primary block (not its own)
 # must NOT be flagged as having undocumented parameters: blocks sharing an

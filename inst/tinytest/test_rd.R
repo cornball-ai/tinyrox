@@ -52,6 +52,50 @@ rd_alias <- tinyrox:::generate_rd(tags_alias, list(names = c("x", "y"), usage = 
 expect_true(grepl("\\\\alias\\{plus\\}", rd_alias))
 expect_true(grepl("\\\\alias\\{sum2\\}", rd_alias))
 
+# Test @section blocks are rendered (#10) - parse -> generate, the real path
+sec_block <- c(
+  "Example function",
+  "",
+  "Main description.",
+  "",
+  "@section Permissions:",
+  "This text should appear in generated Rd.",
+  "@export"
+)
+sec_tags <- tinyrox:::parse_tags(sec_block, "f")
+expect_equal(length(sec_tags$sections), 1L)
+rd_sec <- tinyrox:::generate_rd(sec_tags, list(names = character(), usage = ""))
+expect_true(grepl("\\\\section\\{Permissions\\}\\{", rd_sec))
+expect_true(grepl("This text should appear in generated Rd", rd_sec))
+
+# Multi-word section title
+sec_block2 <- c(
+  "Title", "", "Desc.",
+  "@section Special Permissions:",
+  "Body text.",
+  "@export"
+)
+sec_tags2 <- tinyrox:::parse_tags(sec_block2, "g")
+rd_sec2 <- tinyrox:::generate_rd(sec_tags2, list(names = character(), usage = ""))
+expect_true(grepl("\\\\section\\{Special Permissions\\}\\{", rd_sec2))
+
+# Multiple @section blocks on one function, in order
+sec_block3 <- c(
+  "Title", "", "Desc.",
+  "@section First:", "One.",
+  "@section Second:", "Two.",
+  "@export"
+)
+sec_tags3 <- tinyrox:::parse_tags(sec_block3, "h")
+expect_equal(length(sec_tags3$sections), 2L)
+rd_sec3 <- tinyrox:::generate_rd(sec_tags3, list(names = character(), usage = ""))
+expect_true(grepl("\\\\section\\{First\\}\\{", rd_sec3))
+expect_true(grepl("\\\\section\\{Second\\}\\{", rd_sec3))
+expect_true(regexpr("First", rd_sec3) < regexpr("Second", rd_sec3))
+
+# No @section -> no \section{} block leaks in
+expect_false(grepl("\\\\section\\{", rd))
+
 # Test with keywords
 tags_kw <- tags
 tags_kw$keywords <- c("internal", "math")
