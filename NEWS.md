@@ -1,3 +1,7 @@
+# tinyrox 0.3.3.2
+
+* Fix false "undocumented parameters" warning for functions documented via a sibling block in an `@rdname` group; the check is now group-wide. Also gate the warning on `cran_check` rather than `silent` (#12).
+
 # tinyrox 0.3.1
 
 * Replace internal `utils:::.getHelpFile()` call with `tools::parse_Rd()` for CRAN compliance.
