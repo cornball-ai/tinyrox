@@ -669,10 +669,11 @@ generate_rd_grouped <- function(topic, entries, all_tags,
 #'
 #' @param blocks List of documentation blocks from parse_package().
 #' @param path Package root path.
-#' @param silent Boolean flag whether operation whould be silent
+#' @param cran_check Emit CRAN-compliance warnings (undocumented
+#'   parameters). Default TRUE.
 #' @return Character vector of generated file paths.
 #' @keywords internal
-generate_all_rd <- function(blocks, path = ".", silent = FALSE) {
+generate_all_rd <- function(blocks, path = ".", cran_check = TRUE) {
     generated <- character()
 
     # Find package-defined S3 generics for proper \method{}{} usage formatting
@@ -772,12 +773,13 @@ generate_all_rd <- function(blocks, path = ".", silent = FALSE) {
             generated <- c(generated, filepath)
 
             # Warn about undocumented params
-            if (block$type %in% c("function", "nn_module") &&
+            if (cran_check &&
+                block$type %in% c("function", "nn_module") &&
                 !is.null(block$formals)) {
                 formal_names <- block$formals$names
                 undoc <- setdiff(formal_names, names(tags$params))
                 undoc <- setdiff(undoc, "...")
-                if (length(undoc) > 0 && !silent) {
+                if (length(undoc) > 0) {
                     warning("Undocumented parameters in ", tags$name, ": ",
                             paste(undoc, collapse = ", "),
                             call. = FALSE)
@@ -789,17 +791,34 @@ generate_all_rd <- function(blocks, path = ".", silent = FALSE) {
             filepath <- write_rd(rd_content, topic, path)
             generated <- c(generated, filepath)
 
-            # Warn about undocumented params across all entries
-            for (entry in entries) {
-                if (entry$block$type %in% c("function", "nn_module") &&
-                    !is.null(entry$block$formals)) {
-                    formal_names <- entry$block$formals$names
-                    undoc <- setdiff(formal_names, names(entry$tags$params))
-                    undoc <- setdiff(undoc, "...")
-                    if (length(undoc) > 0 && !silent) {
-                        warning("Undocumented parameters in ", entry$tags$name, ": ",
-                                paste(undoc, collapse = ", "),
-                                call. = FALSE)
+            # Warn about undocumented params. Blocks sharing an @rdname
+            # merge into one page, so a parameter is documented if ANY
+            # block in the group documents it (matching the param merge in
+            # generate_rd_grouped()). Check each function's formals against
+            # the group-wide union, with @inheritParams resolved.
+            if (cran_check) {
+                documented <- character()
+                for (entry in entries) {
+                    etags <- entry$tags
+                    if (length(etags$inheritParams) > 0) {
+                        etags <- resolve_inherit_params(etags, all_tags,
+                                                        entry$block$formals)
+                    }
+                    documented <- c(documented, names(etags$params))
+                }
+                documented <- unique(documented)
+                for (entry in entries) {
+                    if (entry$block$type %in% c("function", "nn_module") &&
+                        !is.null(entry$block$formals)) {
+                        formal_names <- entry$block$formals$names
+                        undoc <- setdiff(formal_names, documented)
+                        undoc <- setdiff(undoc, "...")
+                        if (length(undoc) > 0) {
+                            warning("Undocumented parameters in ",
+                                    entry$tags$name, ": ",
+                                    paste(undoc, collapse = ", "),
+                                    call. = FALSE)
+                        }
                     }
                 }
             }

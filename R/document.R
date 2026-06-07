@@ -69,7 +69,7 @@ document <- function(path = ".",
 
     # Generate Rd files
     if (!silent) message("Generating Rd files...")
-    rd_files <- generate_all_rd(blocks, path, silent)
+    rd_files <- generate_all_rd(blocks, path, cran_check)
     if (!silent) message("Generated ", length(rd_files), " Rd file(s).")
 
     # Generate NAMESPACE

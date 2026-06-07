@@ -234,3 +234,79 @@ expect_true(grepl("Detail B", rd_c))
 # Examples from both blocks
 expect_true(grepl("func_a\\(1\\)", rd_c))
 expect_true(grepl("func_b\\(2\\)", rd_c))
+
+
+# --- Test 7: @rdname params documented on a sibling block (issue #12) ---
+# A function whose formals are documented on the primary block (not its own)
+# must NOT be flagged as having undocumented parameters: blocks sharing an
+# @rdname merge into one page, so the check is group-wide.
+
+if (at_home()) {
+  tmp7 <- tempfile("rdname12")
+  dir.create(file.path(tmp7, "R"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(tmp7, "man"), recursive = TRUE, showWarnings = FALSE)
+  writeLines(c("Package: rdname12", "Title: Test", "Version: 0.1",
+                "Description: Test pkg."), file.path(tmp7, "DESCRIPTION"))
+
+  # Primary block documents utc + precision; set_format has those formals
+  # but documents none of its own. set_level documents its own `level`.
+  writeLines(c(
+    "#' Logger setup",
+    "#'",
+    "#' Configure the logger.",
+    "#' @param utc Use UTC timestamps.",
+    "#' @param precision Sub-second digits.",
+    "#' @rdname logsetup",
+    "#' @export",
+    "set_format <- function(utc, precision) invisible(NULL)",
+    "",
+    "#' @param level Logging threshold.",
+    "#' @rdname logsetup",
+    "#' @export",
+    "set_level <- function(level) invisible(NULL)"
+  ), file.path(tmp7, "R", "logsetup.R"))
+
+  blocks7 <- tinyrox:::parse_package(tmp7)
+
+  # No false positive: every formal is documented somewhere in the group.
+  expect_silent(tinyrox:::generate_all_rd(blocks7, tmp7, cran_check = TRUE))
+
+  unlink(tmp7, recursive = TRUE)
+}
+
+
+# --- Test 8: genuinely undocumented param still warns; cran_check gates it ---
+
+if (at_home()) {
+  tmp8 <- tempfile("rdnamewarn")
+  dir.create(file.path(tmp8, "R"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(tmp8, "man"), recursive = TRUE, showWarnings = FALSE)
+  writeLines(c("Package: rdnamewarn", "Title: Test", "Version: 0.1",
+                "Description: Test pkg."), file.path(tmp8, "DESCRIPTION"))
+
+  # `bogus` is documented by no block in the group -> should warn.
+  writeLines(c(
+    "#' Logger setup",
+    "#'",
+    "#' Configure the logger.",
+    "#' @param utc Use UTC timestamps.",
+    "#' @rdname logsetup",
+    "#' @export",
+    "set_format <- function(utc, bogus) invisible(NULL)",
+    "",
+    "#' @param level Logging threshold.",
+    "#' @rdname logsetup",
+    "#' @export",
+    "set_level <- function(level) invisible(NULL)"
+  ), file.path(tmp8, "R", "logsetup.R"))
+
+  blocks8 <- tinyrox:::parse_package(tmp8)
+
+  # Warns about the truly-undocumented `bogus`...
+  expect_warning(tinyrox:::generate_all_rd(blocks8, tmp8, cran_check = TRUE),
+                 "bogus")
+  # ...but cran_check = FALSE silences it.
+  expect_silent(tinyrox:::generate_all_rd(blocks8, tmp8, cran_check = FALSE))
+
+  unlink(tmp8, recursive = TRUE)
+}
