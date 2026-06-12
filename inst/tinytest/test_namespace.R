@@ -159,3 +159,44 @@ blocks_dynlib_simple <- list(
 
 ns_dynlib_simple <- tinyrox:::generate_namespace(blocks_dynlib_simple)
 expect_true(grepl("useDynLib\\(mypkg\\)", ns_dynlib_simple))
+
+# Regression (#17): overwriting must warn when it drops a directive that has
+# no backing tag (e.g. a hand-added useDynLib), instead of silently breaking
+# the package's compiled code.
+tmp_pkg <- tempfile()
+dir.create(tmp_pkg)
+writeLines(c(
+  "# tinyrox says don't edit this manually, but it can't stop you!",
+  "",
+  "useDynLib(mypkg, .registration = TRUE)",
+  "",
+  "export(old_fn)",
+  "export(hello)"
+), file.path(tmp_pkg, "NAMESPACE"))
+
+new_content <- "# tinyrox says don't edit this manually, but it can't stop you!\n\nexport(hello)"
+expect_warning(tinyrox:::write_namespace(new_content, tmp_pkg),
+               pattern = "useDynLib\\(mypkg, \\.registration = TRUE\\)")
+# The overwrite still happens - the warning is loud, not blocking
+expect_false(any(grepl("useDynLib", readLines(file.path(tmp_pkg, "NAMESPACE")))))
+
+# Dropped export()/S3method() lines are normal churn - no warning
+writeLines(c(
+  "export(old_fn)",
+  "S3method(print,myclass)",
+  "export(hello)"
+), file.path(tmp_pkg, "NAMESPACE"))
+expect_silent(tinyrox:::write_namespace(new_content, tmp_pkg))
+
+# A directive kept in the new content does not warn
+writeLines(c(
+  "useDynLib(mypkg, .registration = TRUE)",
+  "export(hello)"
+), file.path(tmp_pkg, "NAMESPACE"))
+keep_content <- "export(hello)\n\nuseDynLib(mypkg, .registration = TRUE)"
+expect_silent(tinyrox:::write_namespace(keep_content, tmp_pkg))
+
+# Missing NAMESPACE (first document() run) does not warn
+unlink(file.path(tmp_pkg, "NAMESPACE"))
+expect_silent(tinyrox:::write_namespace(new_content, tmp_pkg))
+unlink(tmp_pkg, recursive = TRUE)

@@ -22,6 +22,8 @@ render_sections <- function(sections) {
 #' @param tags Parsed tags from parse_tags().
 #' @param formals Character vector of formal argument names (for functions).
 #' @param source_file Source file path (for header comment).
+#' @param pkg_generics Character vector of S3 generics defined in the
+#'   package itself, used for S3 method detection in usage lines.
 #' @return Character string of Rd content.
 #' @keywords internal
 generate_rd <- function(tags, formals = NULL, source_file = NULL,

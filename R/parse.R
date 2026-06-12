@@ -20,29 +20,21 @@ parse_file <- function(file) {
         return(list())
     }
 
-    # Group doc lines into blocks, allowing gaps of comment/blank lines
+    # Group doc lines into blocks: only strictly consecutive #' lines form
+    # one block (roxygen2 semantics). Blocks separated by blank lines or
+    # plain comments must stay separate - merging them lets an orphaned
+    # block's tags (e.g. @export) bleed into the next function's block.
     blocks <- list()
     current_block <- doc_lines[1]
 
     for (i in seq_along(doc_lines)[-1]) {
-        prev_line <- doc_lines[i - 1]
-        curr_line <- doc_lines[i]
-
-        # Check if gap between prev and curr consists only of comments or blanks
-        gap_ok <- TRUE
-        if (curr_line > prev_line + 1) {
-            gap_lines <- lines[(prev_line + 1):(curr_line - 1)]
-            # Gap is OK if all intervening lines are comments or blank
-            gap_ok <- all(grepl("^\\s*#|^\\s*$", gap_lines))
-        }
-
-        if (gap_ok) {
+        if (doc_lines[i] == doc_lines[i - 1] + 1) {
             # Continue current block
-            current_block <- c(current_block, curr_line)
+            current_block <- c(current_block, doc_lines[i])
         } else {
-            # Code found in gap - save current block and start new one
+            # Any gap ends the block
             blocks <- c(blocks, list(current_block))
-            current_block <- curr_line
+            current_block <- doc_lines[i]
         }
     }
     blocks <- c(blocks, list(current_block))
@@ -54,16 +46,22 @@ parse_file <- function(file) {
         # Extract the comment text (strip #' prefix)
         comment_text <- sub("^#'\\s?", "", lines[block_lines])
 
-        # Find the object definition after the block
+        # Find the object definition after the block. Blank lines and plain
+        # comments between the block and its object are allowed; another #'
+        # line means this block is orphaned (its object was moved or deleted).
         next_line <- max(block_lines) + 1
 
-        # Skip blank lines
         while (next_line <= length(lines) &&
-            grepl("^\\s*$", lines[next_line])) {
+            !grepl("^\\s*#'", lines[next_line]) &&
+            grepl("^\\s*(#|$)", lines[next_line])) {
             next_line <- next_line + 1
         }
 
-        if (next_line > length(lines)) {
+        if (next_line > length(lines) ||
+            grepl("^\\s*#'", lines[next_line])) {
+            warning("Documentation block at ", basename(file), ":",
+                    block_lines[1], " is not followed by an object ",
+                    "definition; its tags are ignored.", call. = FALSE)
             next
         }
 

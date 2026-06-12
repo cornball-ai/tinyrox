@@ -1,7 +1,7 @@
-#' CRAN Compliance Checking for DESCRIPTION
-#'
-#' Functions to validate and fix common CRAN submission issues
-#' related to the DESCRIPTION file.
+# CRAN Compliance Checking for DESCRIPTION
+#
+# Functions to validate and fix common CRAN submission issues
+# related to the DESCRIPTION file.
 
 # Known web services and their URLs
 # Packages that typically require web service documentation

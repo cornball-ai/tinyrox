@@ -218,6 +218,7 @@ write_namespace <- function(content, path = ".", mode = "overwrite") {
     filepath <- file.path(path, "NAMESPACE")
 
     if (mode == "overwrite") {
+        warn_dropped_directives(filepath, content)
         writeLines(content, filepath, useBytes = TRUE)
     } else if (mode == "append") {
         # Append between markers
@@ -272,12 +273,49 @@ write_namespace <- function(content, path = ".", mode = "overwrite") {
     filepath
 }
 
+#' Warn About Dropped NAMESPACE Directives
+#'
+#' Compares the existing NAMESPACE against newly generated content and warns
+#' about directives the regeneration drops. export() and S3method() lines are
+#' excluded - those legitimately churn as tags change. Anything else that
+#' vanishes (a hand-added useDynLib(), an import() with no backing tag) is
+#' load-bearing and the silent drop breaks packages at runtime.
+#'
+#' @param filepath Path to the existing NAMESPACE file.
+#' @param content Newly generated NAMESPACE content string.
+#' @keywords internal
+warn_dropped_directives <- function(filepath, content) {
+    if (!file.exists(filepath)) {
+        return(invisible(NULL))
+    }
+
+    old <- trimws(readLines(filepath, warn = FALSE))
+    old <- old[nzchar(old) & !grepl("^#", old)]
+    new <- trimws(strsplit(content, "\n")[[1]])
+
+    dropped <- setdiff(old, new)
+    dropped <- dropped[!grepl("^(export|S3method)\\(", dropped)]
+
+    if (length(dropped) > 0) {
+        warning("Regenerating NAMESPACE drops directive(s) that have no ",
+                "backing tag in R/:\n",
+                paste0("  ", dropped, collapse = "\n"),
+                "\nIf these are still needed, add the matching tag ",
+                "(e.g. \"#' @useDynLib pkg, .registration = TRUE\" above ",
+                "a NULL) so document() regenerates them.", call. = FALSE)
+    }
+
+    invisible(NULL)
+}
+
 #' Detect S3 Method from Function Name
 #'
 #' Checks if a function name follows the generic.class pattern where
 #' generic is a known S3 generic function.
 #'
 #' @param name Function name to check.
+#' @param pkg_generics Character vector of S3 generics defined in the
+#'   package itself, checked in addition to KNOWN_S3_GENERICS.
 #' @return List with generic and class components, or NULL if not an S3 method.
 #' @keywords internal
 detect_s3_method <- function(name, pkg_generics = character()) {
