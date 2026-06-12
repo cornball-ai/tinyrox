@@ -12,7 +12,10 @@ check_code_cran(path = ".")
 List with issues found
 }
 \description{
-Scans R files for common CRAN policy violations.
+Scans R files for common CRAN policy violations. Files are parsed and
+checked token-wise: comments and string literals are never flagged,
+print()/cat() are allowed inside print./format. S3 methods, and T/F
+shorthand is not confused with a local variable named T or F.
 }
 \examples{
 \donttest{

@@ -74,13 +74,12 @@ check_code_cran <- function(path = ".") {
 #' @return List of issues (each a list with line and message).
 #' @keywords internal
 check_code_file <- function(file) {
-    parsed <- tryCatch(parse(file, keep.source = TRUE),
-                       error = function(e) e)
+    parsed <- tryCatch(parse(file, keep.source = TRUE), error = function(e) e)
 
     if (inherits(parsed, "error")) {
         return(list(list(line = NA_integer_,
-                    message = paste0("File does not parse: ",
-                                     conditionMessage(parsed)))))
+                         message = paste0("File does not parse: ",
+                        conditionMessage(parsed)))))
     }
 
     pd <- utils::getParseData(parsed)
@@ -109,8 +108,8 @@ check_code_tokens <- function(pd) {
     # Top-level expression each token belongs to
     pd$root <- vapply(pd$id, token_root, numeric(1), parents = parents)
 
-    terms <- pd[pd$terminal, , drop = FALSE]
-    terms <- terms[order(terms$line1, terms$col1), , drop = FALSE]
+    terms <- pd[pd$terminal,, drop = FALSE]
+    terms <- terms[order(terms$line1, terms$col1),, drop = FALSE]
 
     # Names assigned (or declared as formals) per top-level expression
     assigned <- assigned_names(terms)
@@ -175,7 +174,7 @@ check_code_tokens <- function(pd) {
     # setwd() without on.exit() in the same top-level expression
     is_setwd <- terms$token == "SYMBOL_FUNCTION_CALL" & terms$text == "setwd"
     onexit_roots <- terms$root[terms$token == "SYMBOL_FUNCTION_CALL" &
-                               terms$text == "on.exit"]
+        terms$text == "on.exit"]
     for (i in which(is_setwd)) {
         if (terms$root[i] %in% onexit_roots) {
             next
@@ -192,7 +191,7 @@ check_code_tokens <- function(pd) {
             next
         }
         root_key <- as.character(terms$root[i])
-        root_terms <- terms[terms$root == terms$root[i], , drop = FALSE]
+        root_terms <- terms[terms$root == terms$root[i],, drop = FALSE]
         has_seed_formal <- any(root_terms$token == "SYMBOL_FORMALS" &
                                root_terms$text == "seed")
         if (!has_seed_formal) {
@@ -273,7 +272,7 @@ assigned_names <- function(terms) {
 #' @return Function name as a string, or NA.
 #' @keywords internal
 root_function_name <- function(root_id, terms) {
-    rt <- terms[terms$root == root_id, , drop = FALSE]
+    rt <- terms[terms$root == root_id,, drop = FALSE]
     if (nrow(rt) >= 3 &&
         rt$token[1] %in% c("SYMBOL", "STR_CONST") &&
         rt$token[2] %in% c("LEFT_ASSIGN", "EQ_ASSIGN") &&
@@ -302,7 +301,7 @@ call_expr_text <- function(pd, id, parents) {
     if (is.null(call_expr) || is.na(call_expr) || call_expr <= 0) {
         return("")
     }
-    text <- tryCatch(utils::getParseText(pd, call_expr),
-                     error = function(e) "")
+    text <- tryCatch(utils::getParseText(pd, call_expr), error = function(e) "")
     paste(text, collapse = "\n")
 }
+
