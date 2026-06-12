@@ -1,6 +1,6 @@
 #' Render User-Defined @section Blocks to Rd
 #'
-#' Emits one `\\section{title}{content}` per parsed `@section`. Content is
+#' Emits one Rd section macro per parsed @section tag. Content is
 #' passed through verbatim as Rd (tinyrox does no markdown parsing), matching
 #' how the title-only macros elsewhere treat hand-written Rd markup.
 #'

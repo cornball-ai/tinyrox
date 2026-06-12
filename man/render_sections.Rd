@@ -12,7 +12,7 @@ render_sections(sections)
 Character vector of Rd lines (empty when there are no sections).
 }
 \description{
-Emits one `\\section{title}{content}` per parsed `@section`. Content is
+Emits one Rd section macro per parsed @section tag. Content is
 passed through verbatim as Rd (tinyrox does no markdown parsing), matching
 how the title-only macros elsewhere treat hand-written Rd markup.
 }
