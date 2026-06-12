@@ -11,6 +11,9 @@ generate_rd_grouped(topic, entries, all_tags, pkg_generics = character())
 \item{entries}{List of list(tags, block) pairs sharing this topic.}
 
 \item{all_tags}{All parsed tags (for @inheritParams resolution).}
+
+\item{pkg_generics}{Character vector of S3 generics defined in the
+package itself, used for S3 method detection in usage lines.}
 }
 \value{
 Character string of merged Rd content.

@@ -57,8 +57,7 @@ parse_file <- function(file) {
             next_line <- next_line + 1
         }
 
-        if (next_line > length(lines) ||
-            grepl("^\\s*#'", lines[next_line])) {
+        if (next_line > length(lines) || grepl("^\\s*#'", lines[next_line])) {
             warning("Documentation block at ", basename(file), ":",
                     block_lines[1], " is not followed by an object ",
                     "definition; its tags are ignored.", call. = FALSE)
@@ -85,8 +84,7 @@ parse_file <- function(file) {
             if (!seen_paren || (depth <= 0L)) {
                 break
             }
-            if (end_line >= length(lines) ||
-                end_line - next_line >= 1000L) {
+            if (end_line >= length(lines) || end_line - next_line >= 1000L) {
                 break
             }
             end_line <- end_line + 1L

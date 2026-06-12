@@ -9,6 +9,9 @@ format_usage(name, args, pkg_generics = character())
 \item{name}{Function name.}
 
 \item{args}{Character vector of arguments with defaults.}
+
+\item{pkg_generics}{Character vector of S3 generics defined in the
+package itself, used for S3 method detection.}
 }
 \value{
 Formatted usage string.
