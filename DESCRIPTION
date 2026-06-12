@@ -12,5 +12,7 @@ License: GPL-3
 URL: https://github.com/cornball-ai/tinyrox
 BugReports: https://github.com/cornball-ai/tinyrox/issues
 Encoding: UTF-8
+Imports:
+    utils
 Suggests:
     tinytest
