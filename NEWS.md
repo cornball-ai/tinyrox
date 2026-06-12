@@ -1,3 +1,7 @@
+# tinyrox 0.3.3.5
+
+* The CRAN code checker scans parse tokens (`utils::getParseData()`) instead of raw source lines (#20). Comments and string literals can no longer trigger findings, `torch.cat()` is no longer `cat()`, `print()`/`cat()` are allowed inside `print.*`/`format.*` S3 methods, and a local variable named `T` or `F` is no longer mistaken for the logical shorthand. `setwd()`/`on.exit()` pairing and `set.seed()` literals are judged within the enclosing function instead of a fixed line window. Unparseable files report one finding instead of erroring.
+
 # tinyrox 0.3.3.4
 
 * Documentation blocks are now strictly consecutive `#'` lines, roxygen2-style. Blocks separated by blank lines no longer merge, so an orphaned block's `@export` can't bleed into the next function and export a `@noRd` helper (#18). Orphaned blocks warn instead of being silently dropped.
