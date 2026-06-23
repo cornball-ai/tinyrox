@@ -12,7 +12,7 @@ check_cran(path = ".")
 List with all issues
 }
 \description{
-Runs all CRAN compliance checks (DESCRIPTION + code).
+Runs the CRAN compliance checks for package code and examples.
 }
 \examples{
 \donttest{

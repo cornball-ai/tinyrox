@@ -10,8 +10,8 @@
 #'   \item{"append"}{Insert between ## tinyrox start/end markers}
 #'   \item{"none"}{Don't modify NAMESPACE}
 #' }
-#' @param cran_check Run CRAN compliance checks (DESCRIPTION quoting,
-#'   web service links, code issues, missing examples). Default TRUE.
+#' @param cran_check Run CRAN compliance checks (code issues and missing
+#'   examples) and undocumented-parameter warnings. Default TRUE.
 #' @param silent Operate less verbose without messages. Default FALSE.
 #' @return Invisibly returns a list with:
 #'   - rd_files: character vector of generated Rd file paths

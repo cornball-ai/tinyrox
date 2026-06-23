@@ -2,7 +2,7 @@
 
 * Accept `@returns` as a plural alias of `@return` (#24). roxygen2 supports both spellings, so an unlisted `@returns` no longer aborts `document()`.
 * Unknown tags now warn and are skipped instead of aborting the run (roxygen2's behavior). One unlisted or misspelled tag no longer takes down `document()` for the whole package; the offending tag is named in the warning and its content is dropped, while every other tag still parses.
-* Soften the DESCRIPTION unquoted-name check for dependency names (#23). Package names from `Imports`/`Depends` that appear in prose (e.g. "base R graphics system") now get an advisory warning that leaves the call to the author, since the check can't tell a package reference from an ordinary word. Curated software names (`OpenAI`, `TensorFlow`, ...) are unambiguous and keep the directive "use single quotes" warning. The `fix = TRUE` and `fix_description_cran()` auto-fix paths now quote only those curated software names, never dependency names, so prose like "graphics" is flagged but left unchanged.
+* Remove DESCRIPTION-field linting (#23). The Title/Description unquoted-name check (`check_description_cran()`, `fix_description_cran()`) and the web-service-link check are gone. A documentation generator should not lint DESCRIPTION prose; the checks leaned on hardcoded, opinionated name lists with no roxygen2 or `R CMD check` equivalent, and one of them flagged (and `fix = TRUE` would rewrite) the ordinary word "graphics" in "base R graphics system". The token-based code checker and example checks (`check_cran()`, `check_examples_cran()`) remain.
 
 # tinyrox 0.3.3.5
 

@@ -16,8 +16,8 @@ document(path = ".", namespace = c("overwrite", "append", "none"),
 \item{"none"}{Don't modify NAMESPACE}
 }}
 
-\item{cran_check}{Run CRAN compliance checks (DESCRIPTION quoting,
-web service links, code issues, missing examples). Default TRUE.}
+\item{cran_check}{Run CRAN compliance checks (code issues and missing
+examples) and undocumented-parameter warnings. Default TRUE.}
 
 \item{silent}{Operate less verbose without messages. Default FALSE.}
 }
