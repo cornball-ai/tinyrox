@@ -46,11 +46,18 @@ tags_desc <- tinyrox:::parse_tags(lines_desc, "foo")
 expect_true(grepl("multiline", tags_desc$description))
 expect_true(grepl("three lines", tags_desc$description))
 
-# Test unknown tag error
-expect_error(
+# Unknown tag warns and is skipped (roxygen2 behavior), not a hard error
+expect_warning(
   tinyrox:::parse_tags(c("@unknowntag value"), "foo"),
   pattern = "Unknown tag"
 )
+
+# A skipped unknown tag does not take down surrounding tags
+tags_skip <- suppressWarnings(
+  tinyrox:::parse_tags(c("Title", "@bogus nope", "@return The value"), "foo")
+)
+expect_equal(tags_skip$title, "Title")
+expect_equal(tags_skip$return, "The value")
 
 # Test @importFrom
 lines_import <- c("Title", "@importFrom stats lm glm")

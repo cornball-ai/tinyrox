@@ -78,16 +78,20 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
             }
             accumulator <- character()
 
-            # Validate tag
+            # Validate tag. An unknown tag is skipped with a warning rather
+            # than aborting the whole run (roxygen2's behavior): the tag stays
+            # current_tag, so its lines accumulate and are dropped by save_tag
+            # (no switch branch), while surrounding tags still parse. This keeps
+            # one unlisted tag from taking down document() for the package.
             if (!current_tag %in% SUPPORTED_TAGS) {
                 location <- if (!is.null(file)) {
                     paste0(" at ", basename(file), ":", line_num + i - 1)
                 } else {
                     ""
                 }
-                stop("Unknown tag @", current_tag, location,
-                     "\nSupported tags: ", paste(SUPPORTED_TAGS, collapse = ", "),
-                     call. = FALSE)
+                warning("Unknown tag @", current_tag, location, " (skipped)",
+                        "\nSupported tags: ",
+                        paste(SUPPORTED_TAGS, collapse = ", "), call. = FALSE)
             }
         } else if (!is.null(current_tag)) {
             # Continuation of current tag
