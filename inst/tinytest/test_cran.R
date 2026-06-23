@@ -161,3 +161,65 @@ test_long_lines <- function() {
   expect_equal(length(tinyrox:::find_long_example_lines(lines3, "test.R")), 0)
 }
 test_long_lines()
+
+# Test warn_unquoted confidence tiers (#23)
+test_warn_tiers <- function() {
+  # Curated software name: unambiguous proper noun -> directive warning
+  expect_warning(
+    tinyrox:::warn_unquoted("Description", "OpenAI"),
+    pattern = "Use single quotes"
+  )
+  # Dependency name: may be plain prose -> softened, advisory warning
+  expect_warning(
+    tinyrox:::warn_unquoted("Description", "graphics"),
+    pattern = "Ordinary-word uses are fine"
+  )
+}
+test_warn_tiers()
+
+# Issue #23 end-to-end: a base R package name used as ordinary prose in the
+# Description should warn softly, not error.
+test_issue23 <- function() {
+  tmp <- tempfile()
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  writeLines(c(
+    "Package: tinyplot",
+    "Title: Lightweight Extension of the Base R Graphics System",
+    "Description: Lightweight extension of the base R graphics system.",
+    "License: Apache License (>= 2)",
+    "Imports: graphics, grDevices, stats, tools, utils"
+  ), file.path(tmp, "DESCRIPTION"))
+  expect_warning(
+    tinyrox::check_description_cran(tmp),
+    pattern = "Ordinary-word uses are fine"
+  )
+}
+test_issue23()
+
+# Issue #23: auto-fix quotes only curated software names. A dependency name
+# used as prose ("graphics") is warned about but must be left unchanged.
+test_fix_leaves_deps <- function() {
+  tmp <- tempfile()
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  writeLines(c(
+    "Package: demo",
+    "Title: A Demo",
+    "Description: An interface to OpenAI on the base R graphics system.",
+    "License: MIT",
+    "Imports: graphics"
+  ), file.path(tmp, "DESCRIPTION"))
+
+  # check_description_cran(fix = TRUE): OpenAI quoted, graphics untouched
+  res <- suppressWarnings(tinyrox::check_description_cran(tmp, fix = TRUE))
+  expect_true(grepl("'OpenAI'", res$fixed_description, fixed = TRUE))
+  expect_false(grepl("'graphics'", res$fixed_description, fixed = TRUE))
+
+  # fix_description_cran(): writes back with OpenAI quoted, graphics untouched
+  suppressMessages(tinyrox::fix_description_cran(tmp, backup = FALSE))
+  desc <- read.dcf(file.path(tmp, "DESCRIPTION"))
+  expect_true(grepl("'OpenAI'", desc[1, "Description"], fixed = TRUE))
+  expect_false(grepl("'graphics'", desc[1, "Description"], fixed = TRUE))
+}
+test_fix_leaves_deps()

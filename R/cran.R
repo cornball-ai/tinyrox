@@ -29,6 +29,37 @@ KNOWN_SOFTWARE_NAMES <- c("OpenAI", "Whisper", "GPT", "ChatGPT",
                           "PostgreSQL", "MySQL", "MongoDB", "AWS", "Azure",
                           "GCP")
 
+#' Warn About Unquoted Names in a DESCRIPTION Field
+#'
+#' Splits found names into two confidence tiers and warns accordingly.
+#' Curated software/company names (KNOWN_SOFTWARE_NAMES) are unambiguous
+#' proper nouns, so they get a directive warning. Dependency names matched
+#' in prose may just be ordinary words (e.g. "graphics system"), so they get
+#' a softened, advisory warning that leaves the call to the user.
+#'
+#' @param field Field name for the message (e.g. "Title", "Description").
+#' @param found Character vector of unquoted names detected in the field.
+#' @keywords internal
+warn_unquoted <- function(field, found) {
+    software <- intersect(found, KNOWN_SOFTWARE_NAMES)
+    deps <- setdiff(found, KNOWN_SOFTWARE_NAMES)
+
+    if (length(software) > 0) {
+        warning("CRAN: unquoted software names in ", field, ": ",
+                paste(software, collapse = ", "), "\n  Use single quotes: ",
+                paste0("'", software, "'", collapse = ", "), call. = FALSE)
+    }
+
+    if (length(deps) > 0) {
+        warning("CRAN: possible unquoted package names in ", field, ": ",
+                paste(deps, collapse = ", "),
+                "\n  Single-quote any that name a package: ",
+                paste0("'", deps, "'", collapse = ", "),
+                "\n  Ordinary-word uses are fine (e.g. \"base R graphics system\").",
+                call. = FALSE)
+    }
+}
+
 #' Check DESCRIPTION for CRAN Compliance
 #'
 #' Validates Title and Description fields for common CRAN issues:
@@ -87,20 +118,12 @@ check_description_cran <- function(path = ".", fix = FALSE) {
 
     if (length(title_unquoted) > 0) {
         issues$title_unquoted <- title_unquoted
-        warning("CRAN: Unquoted names in Title: ",
-                paste(title_unquoted, collapse = ", "),
-                "\n  Use single quotes: ",
-                paste0("'", title_unquoted, "'", collapse = ", "),
-                call. = FALSE)
+        warn_unquoted("Title", title_unquoted)
     }
 
     if (length(desc_unquoted) > 0) {
         issues$desc_unquoted <- desc_unquoted
-        warning("CRAN: Unquoted names in Description: ",
-                paste(desc_unquoted, collapse = ", "),
-                "\n  Use single quotes: ",
-                paste0("'", desc_unquoted, "'", collapse = ", "),
-                call. = FALSE)
+        warn_unquoted("Description", desc_unquoted)
     }
 
     # Check for missing web service links
@@ -112,15 +135,20 @@ check_description_cran <- function(path = ".", fix = FALSE) {
         }, character(1))
         warning("CRAN: Missing web service links in Description for: ",
                 paste(names(missing_links), collapse = ", "),
-                "\n  Consider adding: ", paste(link_suggestions, collapse = ", "),
-                call. = FALSE)
+                "\n  Consider adding: ",
+                paste(link_suggestions, collapse = ", "), call. = FALSE)
     }
 
     result <- list(issues = issues, has_issues = length(issues) > 0)
 
     if (fix) {
-        result$fixed_title <- quote_names_in_text(title, check_names)
-        result$fixed_description <- quote_names_in_text(description, check_names)
+        # Auto-fix quotes only curated software names. Dependency names like
+        # "graphics" are warned about (advisory) but never rewritten, since
+        # they may be ordinary prose ("base R graphics system"), not a package
+        # reference.
+        result$fixed_title <- quote_names_in_text(title, KNOWN_SOFTWARE_NAMES)
+        result$fixed_description <- quote_names_in_text(description,
+            KNOWN_SOFTWARE_NAMES)
     }
 
     invisible(result)
@@ -306,8 +334,10 @@ fix_description_cran <- function(path = ".", backup = TRUE) {
 
     # Read current content
     desc <- read.dcf(desc_file)
-    dep_packages <- get_dependency_packages(desc)
-    check_names <- unique(c(dep_packages, KNOWN_SOFTWARE_NAMES))
+    # Auto-fix quotes only curated software names. Dependency names are
+    # warned about by check_description_cran() but never rewritten here, since
+    # they may be ordinary prose rather than a package reference.
+    check_names <- KNOWN_SOFTWARE_NAMES
 
     made_changes <- FALSE
 
@@ -616,4 +646,3 @@ extract_function_name <- function(line) {
     }
     NULL
 }
-
