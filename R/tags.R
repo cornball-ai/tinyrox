@@ -2,9 +2,9 @@
 #'
 #' @keywords internal
 SUPPORTED_DOC_TAGS <- c("title", "description", "details", "param",
-                        "return", "value", "examples", "example",
-                        "seealso", "references", "aliases", "keywords",
-                        "family", "name", "rdname", "noRd",
+                        "return", "returns", "value", "examples",
+                        "example", "seealso", "references", "aliases",
+                        "keywords", "family", "name", "rdname", "noRd",
                         "inheritParams", "section", "author")
 
 #' Supported Namespace Tags
@@ -204,6 +204,7 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
         }
         result$params[[param_name]] <- param_desc
     },
+           "returns" =,
            "return" =,
            "value" = {
         result$return <- value
@@ -302,4 +303,3 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
 
     result
 }
-

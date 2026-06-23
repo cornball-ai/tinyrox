@@ -105,3 +105,13 @@ tags_md <- tinyrox:::parse_tags(lines_multiline_desc, "foo")
 expect_true(grepl("Line one", tags_md$description))
 expect_true(grepl("Line two", tags_md$description))
 expect_equal(tags_md$details, "Now details.")
+
+# @returns is accepted as a plural alias of @return (roxygen2 supports both) (#24)
+lines_returns <- c("Title", "@returns The result value")
+tags_returns <- tinyrox:::parse_tags(lines_returns, "foo")
+expect_equal(tags_returns$return, "The result value")
+
+# @returns and @return land in the same slot
+lines_return <- c("Title", "@return The result value")
+tags_return <- tinyrox:::parse_tags(lines_return, "foo")
+expect_equal(tags_returns$return, tags_return$return)
