@@ -304,4 +304,3 @@ call_expr_text <- function(pd, id, parents) {
     text <- tryCatch(utils::getParseText(pd, call_expr), error = function(e) "")
     paste(text, collapse = "\n")
 }
-

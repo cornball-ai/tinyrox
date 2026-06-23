@@ -371,4 +371,3 @@ find_package_generics <- function(blocks) {
 
     unique(generics)
 }
-

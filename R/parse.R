@@ -339,4 +339,3 @@ parse_package <- function(path = ".") {
 
     all_blocks
 }
-

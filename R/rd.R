@@ -1072,4 +1072,3 @@ resolve_external_params <- function(source_name) {
 
     params
 }
-

@@ -148,4 +148,3 @@ clean <- function(path = ".", namespace = FALSE) {
 
     invisible(NULL)
 }
-
