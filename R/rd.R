@@ -1,3 +1,11 @@
+#' Header Marker for tinyrox-Generated Rd Files
+#'
+#' The first line of every Rd file tinyrox writes. It both warns against hand
+#' editing and lets tinyrox recognise files it owns (see tinyrox_owns_rd()),
+#' so document() can prune only its own stale pages.
+#' @keywords internal
+RD_MARKER <- "% tinyrox says don't edit this manually, but it can't stop you!"
+
 #' Render User-Defined @section Blocks to Rd
 #'
 #' Emits one Rd section macro per parsed @section tag. Content is
@@ -31,8 +39,7 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL,
     lines <- character()
 
     # Header comment - distinctively tinyrox
-    lines <- c(lines,
-               "% tinyrox says don't edit this manually, but it can't stop you!")
+    lines <- c(lines, RD_MARKER)
 
     # Required sections
     lines <- c(lines, paste0("\\name{", escape_rd(tags$name), "}"))
@@ -163,8 +170,7 @@ generate_data_rd <- function(tags, source_file = NULL, format_string = NULL) {
     lines <- character()
 
     # Header comment - distinctively tinyrox
-    lines <- c(lines,
-               "% tinyrox says don't edit this manually, but it can't stop you!")
+    lines <- c(lines, RD_MARKER)
 
     # docType for data
     lines <- c(lines, "\\docType{data}")
@@ -499,6 +505,58 @@ write_rd <- function(content, name, path = ".") {
     filepath
 }
 
+#' Identify a tinyrox-Generated Rd File
+#'
+#' Returns TRUE only if the file's first line is exactly RD_MARKER. This is
+#' deliberately conservative: hand-written Rd, or Rd written by other tools,
+#' never matches, so prune_stale_rd() cannot delete them.
+#'
+#' @param file Path to an Rd file.
+#' @return TRUE if tinyrox generated the file, FALSE otherwise.
+#' @keywords internal
+tinyrox_owns_rd <- function(file) {
+    con <- file(file, "r")
+    on.exit(close(con))
+    line1 <- readLines(con, n = 1, warn = FALSE)
+    length(line1) == 1L && identical(line1, RD_MARKER)
+}
+
+#' Prune Stale tinyrox-Generated Rd Files
+#'
+#' Removes man/*.Rd files that the current document() run did not
+#' (re)generate, but only those tinyrox can prove it owns via
+#' tinyrox_owns_rd(). Hand-written Rd, and any Rd lacking the marker, are
+#' left untouched.
+#'
+#' @param path Package root directory.
+#' @param generated Character vector of Rd file paths produced this run.
+#' @param silent Suppress the removal message? Default FALSE.
+#' @return Character vector of removed file paths (invisibly).
+#' @keywords internal
+prune_stale_rd <- function(path, generated, silent = FALSE) {
+    man_dir <- file.path(path, "man")
+    if (!dir.exists(man_dir)) {
+        return(invisible(character()))
+    }
+    existing <- list.files(man_dir, pattern = "\\.Rd$", full.names = TRUE)
+    # Compare by basename so path-spelling differences do not matter.
+    stale <- existing[!(basename(existing) %in% basename(generated))]
+
+    removed <- character()
+    for (f in stale) {
+        if (tinyrox_owns_rd(f)) {
+            file.remove(f)
+            removed <- c(removed, f)
+        }
+    }
+
+    if (length(removed) > 0 && !silent) {
+        message("Pruned ", length(removed), " stale Rd file(s): ",
+                paste(basename(removed), collapse = ", "))
+    }
+    invisible(removed)
+}
+
 #' Generate Rd Content for Grouped Blocks (Multiple @rdname Entries)
 #'
 #' Merges multiple documentation blocks that share an @rdname topic
@@ -517,8 +575,7 @@ generate_rd_grouped <- function(topic, entries, all_tags,
     lines <- character()
 
     # Header
-    lines <- c(lines,
-               "% tinyrox says don't edit this manually, but it can't stop you!")
+    lines <- c(lines, RD_MARKER)
 
     # Find primary block: whose tags$name matches the topic name
     primary_idx <- NULL
@@ -890,8 +947,7 @@ generate_package_rd <- function(tags, pkg_name, source_file) {
     lines <- character()
 
     # Header - distinctively tinyrox
-    lines <- c(lines,
-               "% tinyrox says don't edit this manually, but it can't stop you!")
+    lines <- c(lines, RD_MARKER)
 
     # docType
     lines <- c(lines, "\\docType{package}")

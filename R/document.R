@@ -13,8 +13,13 @@
 #' @param cran_check Run CRAN compliance checks (code issues and missing
 #'   examples) and undocumented-parameter warnings. Default TRUE.
 #' @param silent Operate less verbose without messages. Default FALSE.
+#' @param prune_rd Remove stale Rd files for topics no longer documented
+#'   (e.g. after a rename or deletion)? Only files tinyrox generated are
+#'   removed; hand-written Rd is never touched. Default TRUE. Set FALSE to
+#'   leave existing Rd in place.
 #' @return Invisibly returns a list with:
 #'   - rd_files: character vector of generated Rd file paths
+#'   - pruned: character vector of stale Rd file paths removed
 #'   - namespace: path to NAMESPACE file (or NULL if mode="none")
 #'
 #' @export
@@ -42,7 +47,7 @@
 #' }
 document <- function(path = ".",
                      namespace = c("overwrite", "append", "none"),
-                     cran_check = TRUE, silent = FALSE) {
+                     cran_check = TRUE, silent = FALSE, prune_rd = TRUE) {
     namespace <- match.arg(namespace)
 
     # Validate path
@@ -66,7 +71,8 @@ document <- function(path = ".",
         if (!silent) {
             message("No documentation blocks found.")
         }
-        return(invisible(list(rd_files = character(), namespace = NULL)))
+        return(invisible(list(rd_files = character(), pruned = character(),
+                              namespace = NULL)))
     }
 
     if (!silent) {
@@ -80,6 +86,13 @@ document <- function(path = ".",
     rd_files <- generate_all_rd(blocks, path, cran_check)
     if (!silent) {
         message("Generated ", length(rd_files), " Rd file(s).")
+    }
+
+    # Prune stale Rd left behind by renamed or deleted topics (tinyrox-owned
+    # files only; hand-written Rd is never removed).
+    pruned <- character()
+    if (prune_rd) {
+        pruned <- prune_stale_rd(path, rd_files, silent)
     }
 
     # Generate NAMESPACE
@@ -99,7 +112,7 @@ document <- function(path = ".",
         message("Leaving DESCRIPTION alone as one should.")
     }
 
-    invisible(list(rd_files = rd_files, namespace = ns_file))
+    invisible(list(rd_files = rd_files, pruned = pruned, namespace = ns_file))
 }
 
 #' Clean Generated Files
