@@ -110,3 +110,33 @@ expect_equal(length(big$formals$names), 30L)
 expect_equal(big$formals$names[30], "a30")
 expect_true(all(grepl("= NULL$", big$formals$usage)))
 unlink(tmp)
+
+# ESS-style ##' comments parse like #' (PR #27).
+tmp <- tempfile(fileext = ".R")
+writeLines(c(
+  "##' Add one",
+  "##' @param x A number.",
+  "##' @export",
+  "add_one <- function(x) x + 1"
+), tmp)
+blocks <- tinyrox:::parse_file(tmp)
+expect_equal(length(blocks), 1)
+expect_equal(blocks[[1]]$object, "add_one")
+unlink(tmp)
+
+# The orphaned-block detector must recognise ##' too, so a stray ##' block
+# can't bleed into the next object (the #18 regression for double-hash).
+tmp <- tempfile(fileext = ".R")
+writeLines(c(
+  "##' Orphaned block (its object was moved away)",
+  "##' @export",
+  "",
+  "##' Real",
+  "##' @export",
+  "real_fn <- function() 1"
+), tmp)
+expect_warning(blocks <- tinyrox:::parse_file(tmp),
+               pattern = "not followed by an object definition")
+expect_equal(length(blocks), 1)
+expect_equal(blocks[[1]]$object, "real_fn")
+unlink(tmp)

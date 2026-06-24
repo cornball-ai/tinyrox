@@ -52,12 +52,12 @@ parse_file <- function(file) {
         next_line <- max(block_lines) + 1
 
         while (next_line <= length(lines) &&
-            !grepl("^\\s*#'", lines[next_line]) &&
+            !grepl("^\\s*##?'", lines[next_line]) &&
             grepl("^\\s*(#|$)", lines[next_line])) {
             next_line <- next_line + 1
         }
 
-        if (next_line > length(lines) || grepl("^\\s*#'", lines[next_line])) {
+        if (next_line > length(lines) || grepl("^\\s*##?'", lines[next_line])) {
             warning("Documentation block at ", basename(file), ":",
                     block_lines[1], " is not followed by an object ",
                     "definition; its tags are ignored.", call. = FALSE)
