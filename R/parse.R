@@ -14,7 +14,7 @@ parse_file <- function(file) {
     lines <- readLines(file, encoding = "UTF-8", warn = FALSE)
 
     # Find documentation blocks (consecutive #' lines)
-    doc_lines <- grep("^#'", lines)
+    doc_lines <- grep("^##?'", lines)
 
     if (length(doc_lines) == 0) {
         return(list())
@@ -43,8 +43,8 @@ parse_file <- function(file) {
     result <- list()
 
     for (block_lines in blocks) {
-        # Extract the comment text (strip #' prefix)
-        comment_text <- sub("^#'\\s?", "", lines[block_lines])
+        # Extract the comment text (strip #' or ##' prefix)
+        comment_text <- sub("^##?'\\s?", "", lines[block_lines])
 
         # Find the object definition after the block. Blank lines and plain
         # comments between the block and its object are allowed; another #'

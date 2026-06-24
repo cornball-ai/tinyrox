@@ -134,7 +134,7 @@ find_exports_without_examples <- function(lines) {
         line <- lines[i]
 
         # Start of doc block
-        if (grepl("^#'", line)) {
+        if (grepl("^##?'", line)) {
             if (!in_doc_block) {
                 in_doc_block <- TRUE
                 has_export <- FALSE
@@ -143,12 +143,12 @@ find_exports_without_examples <- function(lines) {
             }
 
             # Check for export tag
-            if (grepl("^#'\\s*@export", line)) {
+            if (grepl("^##?'\\s*@export", line)) {
                 has_export <- TRUE
             }
 
             # Check for examples tag
-            if (grepl("^#'\\s*@examples", line)) {
+            if (grepl("^##?'\\s*@examples", line)) {
                 has_examples <- TRUE
             }
         } else if (in_doc_block) {
@@ -183,14 +183,14 @@ find_dontrun_examples <- function(lines) {
     for (i in seq_along(lines)) {
         line <- lines[i]
 
-        if (grepl("^#'", line)) {
+        if (grepl("^##?'", line)) {
             if (!in_doc_block) {
                 in_doc_block <- TRUE
                 has_export <- FALSE
                 has_dontrun <- FALSE
             }
 
-            if (grepl("^#'\\s*@export", line)) {
+            if (grepl("^##?'\\s*@export", line)) {
                 has_export <- TRUE
             }
 
@@ -226,25 +226,25 @@ find_long_example_lines <- function(lines, filename) {
     for (i in seq_along(lines)) {
         line <- lines[i]
 
-        if (!grepl("^#'", line)) {
+        if (!grepl("^##?'", line)) {
             in_examples <- FALSE
             next
         }
 
-        if (grepl("^#'\\s*@examples", line)) {
+        if (grepl("^##?'\\s*@examples", line)) {
             in_examples <- TRUE
             next
         }
 
         # Other tags end the examples block
-        if (grepl("^#'\\s*@[a-zA-Z]", line)) {
+        if (grepl("^##?'\\s*@[a-zA-Z]", line)) {
             in_examples <- FALSE
             next
         }
 
         if (in_examples) {
             # Strip the #' prefix to get the actual example content
-            content <- sub("^#'\\s?", "", line)
+            content <- sub("^##?'\\s?", "", line)
             if (nchar(content) > 100) {
                 found <- c(found,
                            paste0(filename, ":", i, " (", nchar(content), " chars)"))
