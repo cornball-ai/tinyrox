@@ -71,7 +71,13 @@ document <- function(path = ".",
         if (!silent) {
             message("No documentation blocks found.")
         }
-        return(invisible(list(rd_files = character(), pruned = character(),
+        # Nothing is generated this run, so every tinyrox-owned Rd is now stale
+        # (e.g. the last documented topic was deleted). Prune them too.
+        pruned <- character()
+        if (prune_rd) {
+            pruned <- prune_stale_rd(path, character(), silent)
+        }
+        return(invisible(list(rd_files = character(), pruned = pruned,
                               namespace = NULL)))
     }
 
