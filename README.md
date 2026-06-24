@@ -83,30 +83,25 @@ add <- function(x, y) {
 tinyrox includes automated CRAN compliance checks:
 
 ```r
-# Check DESCRIPTION for common issues
-check_description_cran()
-# Warns about: unquoted package names, missing web service links
-
 # Check R code for CRAN policy violations
 check_code_cran()
 # Warns about: T/F, print()/cat(), .GlobalEnv, installed.packages(), etc.
 
-# Run all checks
-check_cran()
+# Check exported functions for missing examples and \dontrun overuse
+check_examples_cran()
 
-# Auto-fix DESCRIPTION quoting issues
-fix_description_cran()
+# Run all checks (code + examples)
+check_cran()
 ```
 
 Issues detected:
-- Unquoted package/software names in Title/Description
-- Missing web service links for packages like hfhub, gh
 - `T`/`F` instead of `TRUE`/`FALSE`
 - `print()`/`cat()` instead of `message()`
 - `installed.packages()` usage
 - `.GlobalEnv` modifications
 - `setwd()` without `on.exit()` restoration
 - Hardcoded `set.seed()` without parameter
+- Exported functions without examples; `\dontrun{}` overuse
 
 ## Philosophy
 
@@ -119,7 +114,7 @@ tinyrox follows the [tinyverse](https://www.tinyverse.org) philosophy:
 - Explicit over implicit - no inference magic
 - Strict subset of tags - not everything roxygen2 does
 - Deterministic output - same input = same output
-- Fail fast on unknown tags
+- Warn and skip unknown tags (roxygen2 behavior), never abort the run
 
 **What tinyrox does NOT do:**
 - Markdown parsing

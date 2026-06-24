@@ -45,3 +45,25 @@ expect_false(file.exists(file.path(pkg, "man", "old_topic.Rd")))  # stale tinyro
 expect_equal(sort(basename(res$pruned)), c("foo.Rd", "old_topic.Rd"))
 
 unlink(pkg, recursive = TRUE)
+
+# Deleting the last documented topic prunes its Rd: with zero blocks the run
+# generates nothing, so every tinyrox-owned Rd is stale (document() must prune
+# on the no-blocks path, not return early).
+pkg2 <- file.path(tempdir(), "prunelast")
+if (dir.exists(pkg2)) unlink(pkg2, recursive = TRUE)
+dir.create(file.path(pkg2, "R"), recursive = TRUE)
+writeLines(c("Package: prunelast", "Title: Test", "Version: 0.1.0"),
+           file.path(pkg2, "DESCRIPTION"))
+writeLines(c("#' Solo", "#' @export", "solo <- function() 1"),
+           file.path(pkg2, "R", "solo.R"))
+tinyrox::document(pkg2, namespace = "none", cran_check = FALSE, silent = TRUE)
+expect_true(file.exists(file.path(pkg2, "man", "solo.Rd")))
+
+# Remove the only roxygen -> no blocks; the now-stale solo.Rd must be pruned.
+writeLines("solo <- function() 1", file.path(pkg2, "R", "solo.R"))
+res2 <- tinyrox::document(pkg2, namespace = "none", cran_check = FALSE,
+                          silent = TRUE, prune_rd = TRUE)
+expect_false(file.exists(file.path(pkg2, "man", "solo.Rd")))
+expect_equal(basename(res2$pruned), "solo.Rd")
+
+unlink(pkg2, recursive = TRUE)
