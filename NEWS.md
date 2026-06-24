@@ -1,3 +1,7 @@
+# tinyrox 0.3.3.7
+
+* `document()` now prunes stale Rd files for topics that were renamed or removed (#22). After regenerating, it deletes `man/*.Rd` pages the current run did not produce, but only files tinyrox owns (first line is the tinyrox marker); hand-written Rd and Rd from other tools are never touched. Pass `prune_rd = FALSE` for the previous keep-everything behaviour. The returned list gains a `pruned` element.
+
 # tinyrox 0.3.3.6
 
 * Accept `@returns` as a plural alias of `@return` (#24). roxygen2 supports both spellings, so an unlisted `@returns` no longer aborts `document()`.
