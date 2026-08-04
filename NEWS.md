@@ -1,30 +1,16 @@
-# tinyrox 0.3.3.7
+# tinyrox 0.4.0
 
-* `document()` now prunes stale Rd files for topics that were renamed or removed (#22). After regenerating, it deletes `man/*.Rd` pages the current run did not produce, but only files tinyrox owns (first line is the tinyrox marker); hand-written Rd and Rd from other tools are never touched. Pass `prune_rd = FALSE` for the previous keep-everything behaviour. The returned list gains a `pruned` element.
+Consolidates the 0.3.3.x development cycle.
 
-# tinyrox 0.3.3.6
-
-* Accept `@returns` as a plural alias of `@return` (#24). roxygen2 supports both spellings, so an unlisted `@returns` no longer aborts `document()`.
-* Unknown tags now warn and are skipped instead of aborting the run (roxygen2's behavior). One unlisted or misspelled tag no longer takes down `document()` for the whole package; the offending tag is named in the warning and its content is dropped, while every other tag still parses.
-* Remove DESCRIPTION-field linting (#23). The Title/Description unquoted-name check (`check_description_cran()`, `fix_description_cran()`) and the web-service-link check are gone. A documentation generator should not lint DESCRIPTION prose; the checks leaned on hardcoded, opinionated name lists with no roxygen2 or `R CMD check` equivalent, and one of them flagged (and `fix = TRUE` would rewrite) the ordinary word "graphics" in "base R graphics system". The token-based code checker and example checks (`check_cran()`, `check_examples_cran()`) remain.
-
-# tinyrox 0.3.3.5
-
-* The CRAN code checker scans parse tokens (`utils::getParseData()`) instead of raw source lines (#20). Comments and string literals can no longer trigger findings, `torch.cat()` is no longer `cat()`, `print()`/`cat()` are allowed inside `print.*`/`format.*` S3 methods, and a local variable named `T` or `F` is no longer mistaken for the logical shorthand. `setwd()`/`on.exit()` pairing and `set.seed()` literals are judged within the enclosing function instead of a fixed line window. Unparseable files report one finding instead of erroring.
-
-# tinyrox 0.3.3.4
-
-* Documentation blocks are now strictly consecutive `#'` lines, roxygen2-style. Blocks separated by blank lines no longer merge, so an orphaned block's `@export` can't bleed into the next function and export a `@noRd` helper (#18). Orphaned blocks warn instead of being silently dropped.
-* `document()` warns when regenerating NAMESPACE drops a directive with no backing tag (e.g. a hand-added `useDynLib()` line), instead of silently discarding it (#17). `export()` and `S3method()` churn is exempt.
-* Plain `#` comments between a block and its function no longer detach the documentation.
-
-# tinyrox 0.3.3.3
-
-* Render `@section` blocks in the Rd for ordinary functions and `@rdname` groups. They were parsed but only emitted for package-level docs, so a function's `@section` was silently dropped (#10).
-
-# tinyrox 0.3.3.2
-
-* Fix false "undocumented parameters" warning for functions documented via a sibling block in an `@rdname` group; the check is now group-wide. Also gate the warning on `cran_check` rather than `silent` (#12).
+* **Breaking:** removed the DESCRIPTION-field linting, `check_description_cran()` and `fix_description_cran()`, along with the web-service-link check (#23). A documentation generator should not lint DESCRIPTION prose, and the checks produced false positives (e.g. flagging the ordinary word "graphics"). The token-based code checker and example checks (`check_cran()`, `check_examples_cran()`) remain, though `check_cran()`'s result list no longer carries a `description` element.
+* `document()` gains stale-Rd pruning: after regenerating it removes `man/*.Rd` pages for renamed or deleted topics, but only files tinyrox owns (first line is the tinyrox marker); hand-written Rd is never touched. Pass `prune_rd = FALSE` to disable (#22).
+* Accept `@returns` as a plural alias of `@return` (#24).
+* Recognise ESS-style `##'` doc comments in addition to `#'`, matching roxygen2's `#+'` (Dirk Eddelbuettel, #27).
+* Unknown tags now warn and are skipped instead of aborting the run (roxygen2's behavior); one misspelled or unlisted tag no longer takes down `document()` for the whole package.
+* The CRAN code checker scans parse tokens (`utils::getParseData()`) instead of raw source lines, eliminating false positives from comments, strings, and look-alikes such as `torch.cat()` (#20).
+* Documentation blocks must be strictly consecutive `#'` lines: an orphaned block's `@export` can no longer bleed into the next function (#18), and `document()` warns instead of silently dropping a hand-added NAMESPACE directive (#17).
+* Render `@section` blocks in the Rd for ordinary functions and `@rdname` groups (#10).
+* Fix a false "undocumented parameters" warning for functions documented via a sibling block in an `@rdname` group (#12).
 
 # tinyrox 0.3.1
 
