@@ -312,3 +312,33 @@ rd29 <- tinyrox:::generate_rd(tags29,
                               list(names = c("provider", "access_token"),
                                    usage = long_args))
 expect_true(all(nchar(strsplit(rd29, "\n")[[1]]) <= 90))
+
+# --- Issue #31: already-escaped \% must not be double-escaped ---
+
+# Behavior table from the issue: only the pre-escaped rows change
+expect_equal(tinyrox:::escape_rd("frame_%04d.png"), "frame_\\%04d.png")
+expect_equal(tinyrox:::escape_rd("frame_\\%04d.png"), "frame_\\%04d.png")
+expect_equal(tinyrox:::escape_rd("x %in% y"), "x \\%in\\% y")
+expect_equal(tinyrox:::escape_rd("trailing \\%"), "trailing \\%")
+
+# Mixed bare and pre-escaped in one string
+expect_equal(tinyrox:::escape_rd("50% and \\%"), "50\\% and \\%")
+
+# Markup-passthrough branch preserves pre-escaped % too
+expect_equal(tinyrox:::escape_rd('\\code{"frame_\\%04d.png"}'),
+             '\\code{"frame_\\%04d.png"}')
+expect_equal(tinyrox:::escape_rd('\\code{"frame_%04d.png"}'),
+             '\\code{"frame_\\%04d.png"}')
+
+# Examples path goes through the same escape
+tags31 <- list(
+  title = "T", description = "D", details = NULL,
+  params = list(), return = NULL,
+  examples = 'sprintf("%d of \\%d", 1)',
+  seealso = NULL, references = NULL,
+  aliases = character(), keywords = character(), family = NULL,
+  name = "fmt", noRd = FALSE
+)
+rd31 <- tinyrox:::generate_rd(tags31, list(names = character(),
+                                           usage = character()))
+expect_true(grepl('sprintf("\\%d of \\%d", 1)', rd31, fixed = TRUE))
