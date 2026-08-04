@@ -1,3 +1,7 @@
+# tinyrox 0.4.0.1
+
+* `\usage` lines now stay within the 90-character Rd limit (#29). Overlong signatures wrap roxygen2-style: one argument per line, breaking inside a long default when needed, so `R CMD check` no longer NOTEs "Rd line widths".
+
 # tinyrox 0.4.0
 
 Consolidates the 0.3.3.x development cycle.
