@@ -342,3 +342,56 @@ tags31 <- list(
 rd31 <- tinyrox:::generate_rd(tags31, list(names = character(),
                                            usage = character()))
 expect_true(grepl('sprintf("\\%d of \\%d", 1)', rd31, fixed = TRUE))
+
+# --- Issue #30 acceptance: _PACKAGE through the full document() flow ---
+test_package_sentinel_document <- function() {
+  pkg <- file.path(tempdir(), "sentpkg")
+  on.exit(unlink(pkg, recursive = TRUE), add = TRUE)
+  dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+  writeLines(c(
+      "Package: sentpkg", "Title: T", "Version: 0.0.1",
+      "Description: D.",
+      "Authors@R: person('A', 'B', email='a@b.c', role=c('aut','cre'))"
+    ), file.path(pkg, "DESCRIPTION"))
+  writeLines(c(
+      "#' sentpkg: Test Package.",
+      "#'",
+      "#' Ignored description paragraph.",
+      "#'",
+      "#' Details paragraph.",
+      "#' @keywords internal",
+      "\"_PACKAGE\""),
+      file.path(pkg, "R", "sentpkg-package.R"))
+  writeLines(c(
+      "#' Identity",
+      "#' @param x A value.",
+      "#' @return x.",
+      "#' @examples",
+      "#' ident(1)",
+      "#' @export",
+      "ident <- function(x) x"),
+      file.path(pkg, "R", "ident.R"))
+
+  tinyrox::document(pkg, cran_check = FALSE, silent = TRUE)
+
+  # Package topic generated with docType and both aliases (?sentpkg resolves)
+  rd_path <- file.path(pkg, "man", "sentpkg-package.Rd")
+  expect_true(file.exists(rd_path))
+  rd <- readLines(rd_path)
+  expect_true("\\docType{package}" %in% rd)
+  expect_true("\\alias{sentpkg}" %in% rd)
+  expect_true("\\alias{sentpkg-package}" %in% rd)
+  expect_true("Details paragraph." %in% rd)
+
+  # NAMESPACE holds the one real export and nothing for the sentinel
+  ns <- readLines(file.path(pkg, "NAMESPACE"))
+  expect_equal(grep("^export", ns, value = TRUE), "export(ident)")
+  expect_false(any(grepl("_PACKAGE", ns, fixed = TRUE)))
+
+  # Re-documenting is idempotent and prune_rd leaves the package topic alone
+  res2 <- tinyrox::document(pkg, cran_check = FALSE, silent = TRUE,
+                            prune_rd = TRUE)
+  expect_equal(readLines(rd_path), rd)
+  expect_equal(res2$pruned, character(0))
+}
+test_package_sentinel_document()

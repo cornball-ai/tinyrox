@@ -43,7 +43,7 @@ check_cran()
 | `@seealso` | Cross-references |
 | `@references` | Citations |
 | `@section Title:` | Custom section (package-level docs only) |
-| `@author` | Author information (package-level docs only) |
+| `@author` | Accepted for roxygen2 compatibility; ignored (authors come from `DESCRIPTION`) |
 | `@aliases` | Additional topic aliases |
 | `@keywords` | Rd keywords (e.g., `internal`) |
 | `@name` | Explicit topic name |
@@ -89,8 +89,8 @@ generate a `?pkgname` landing topic:
 #' This paragraph is ignored; the help page pulls the description from
 #' DESCRIPTION instead (see below).
 #'
-#' Paragraphs three and beyond (or @details) become \details{}: design
-#' notes, limitations, getting-started prose.
+#' Paragraphs three and beyond (or @details) become the details
+#' section: design notes, limitations, getting-started prose.
 #' @keywords internal
 "_PACKAGE"
 ```
