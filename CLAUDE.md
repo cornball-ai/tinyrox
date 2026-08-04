@@ -33,6 +33,12 @@ r -e 'tinyrox::document()'
 ### Namespace
 `@export`, `@exportS3Method`, `@exportClass`, `@import`, `@importFrom`, `@useDynLib`
 
+### Package-level docs
+A block attached to the `"_PACKAGE"` sentinel generates `man/pkg-package.Rd`
+(aliases `pkg` and `pkg-package`). Title/description/author/maintainer come
+from DESCRIPTION via base-R Rd macros; block paragraphs 3+ (or `@details`)
+fill `\details{}`. Nothing is added to NAMESPACE.
+
 ## What it does NOT do
 
 - Markdown parsing

@@ -78,6 +78,32 @@ add <- function(x, y) {
 }
 ```
 
+## Package-Level Documentation
+
+Attach a block to the `"_PACKAGE"` sentinel (same convention as roxygen2) to
+generate a `?pkgname` landing topic:
+
+```r
+#' mypkg: One-Line Title
+#'
+#' This paragraph is ignored; the help page pulls the description from
+#' DESCRIPTION instead (see below).
+#'
+#' Paragraphs three and beyond (or @details) become \details{}: design
+#' notes, limitations, getting-started prose.
+#' @keywords internal
+"_PACKAGE"
+```
+
+This writes `man/mypkg-package.Rd` with package `docType` and aliases for
+`mypkg` and `mypkg-package`, so `?mypkg` resolves. Title, description,
+author, and maintainer come from `DESCRIPTION` at render time via the base-R
+Rd macros (`\packageTitle{}`, `\packageDescription{}`, `\packageAuthor{}`,
+`\packageMaintainer{}`). DESCRIPTION stays the single source of truth, and
+the block's title and description paragraphs are not copied into the Rd. A
+function index is generated with `\packageIndices{}`. The sentinel is not
+exported and adds nothing to `NAMESPACE`.
+
 ## CRAN Compliance Checking
 
 tinyrox includes automated CRAN compliance checks:
