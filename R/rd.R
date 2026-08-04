@@ -139,7 +139,7 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL,
     if (!is.null(tags$examples) && nchar(trimws(tags$examples)) > 0) {
         lines <- c(lines, "\\examples{")
         # Escape % in examples (Rd comment character), but leave other content verbatim
-        examples_escaped <- gsub("%", "\\\\%", tags$examples)
+        examples_escaped <- escape_percent(tags$examples)
         lines <- c(lines, examples_escaped)
         lines <- c(lines, "}")
     }
@@ -229,7 +229,7 @@ generate_data_rd <- function(tags, source_file = NULL, format_string = NULL) {
     # Examples (before seealso like roxygen2)
     if (!is.null(tags$examples) && nchar(trimws(tags$examples)) > 0) {
         lines <- c(lines, "\\examples{")
-        examples_escaped <- gsub("%", "\\\\%", tags$examples)
+        examples_escaped <- escape_percent(tags$examples)
         lines <- c(lines, examples_escaped)
         lines <- c(lines, "}")
     }
@@ -303,6 +303,20 @@ format_object_info <- function(name, pkg_path) {
     paste0("An object of class \\code{", obj_class, "} of length ", obj_len, ".")
 }
 
+#' Escape Unescaped Percent Signs
+#'
+#' Escapes % as \\% for Rd, leaving an already-escaped \\% alone. roxygen2
+#' makes authors escape % themselves, so sources migrated from roxygen2
+#' carry \\% already; escaping unconditionally would double it into \\\\%,
+#' which Rd reads as a literal backslash plus a comment start (#31).
+#'
+#' @param text Text to escape.
+#' @return Text with every % escaped exactly once.
+#' @keywords internal
+escape_percent <- function(text) {
+    gsub("(?<!\\\\)%", "\\\\%", text, perl = TRUE)
+}
+
 #' Escape Special Characters for Rd
 #'
 #' Escapes special characters for Rd format, but detects and preserves
@@ -319,17 +333,14 @@ escape_rd <- function(text) {
     # Check if text contains Rd markup (backslash commands like \describe, \item,
     # \Sexpr[...]{}, etc.). If so, pass through with minimal escaping (just %).
     if (grepl("\\\\[a-zA-Z]+(\\[.*\\])?\\{", text)) {
-        text <- gsub("%", "\\\\%", text)
-        return(text)
+        return(escape_percent(text))
     }
 
     # No Rd markup - escape braces and percent only
     # Don't escape backslashes - unknown sequences pass through in Rd (like roxygen2)
     text <- gsub("\\{", "\\\\{", text)
     text <- gsub("\\}", "\\\\}", text)
-    text <- gsub("%", "\\\\%", text)
-
-    text
+    escape_percent(text)
 }
 
 #' Format Usage Line
@@ -763,7 +774,7 @@ generate_rd_grouped <- function(topic, entries, all_tags,
     }
     if (length(examples_parts) > 0) {
         lines <- c(lines, "\\examples{")
-        lines <- c(lines, gsub("%", "\\\\%", paste(examples_parts, collapse = "\n\n")))
+        lines <- c(lines, escape_percent(paste(examples_parts, collapse = "\n\n")))
         lines <- c(lines, "}")
     }
 

@@ -1,3 +1,7 @@
+# tinyrox 0.4.0.2
+
+* An already-escaped `\%` in roxygen source is no longer double-escaped into `\\%` (#31). Both bare `%` and roxygen2-style pre-escaped `\%` now produce a single `\%` in the generated Rd.
+
 # tinyrox 0.4.0.1
 
 * `\usage` lines now stay within the 90-character Rd limit (#29). Overlong signatures wrap roxygen2-style: one argument per line, breaking inside a long default when needed, so `R CMD check` no longer NOTEs "Rd line widths".
