@@ -243,3 +243,72 @@ test_package_rd_no_details <- function() {
   unlink(pkg, recursive = TRUE)
 }
 test_package_rd_no_details()
+
+# --- Issue #29: \usage lines must stay within the 90-char Rd limit ---
+
+# Short usage stays on a single line
+expect_equal(tinyrox:::format_usage("add", c("x", "y")), "add(x, y)")
+
+# Long defaults wrap roxygen2-style: one arg per line, overlong args broken
+long_args <- c(
+  'provider = c("anthropic", "anthropic_claude", "openai", "moonshot", "openai_codex", "ollama")',
+  'access_token = Sys.getenv("ANTHROPIC_CLAUDE_ACCESS_TOKEN", "")'
+)
+usage29 <- tinyrox:::format_usage("choose_provider", long_args)
+expect_equal(usage29, paste(
+  "choose_provider(",
+  '  provider = c("anthropic", "anthropic_claude", "openai", "moonshot", "openai_codex",',
+  '    "ollama"),',
+  '  access_token = Sys.getenv("ANTHROPIC_CLAUDE_ACCESS_TOKEN", "")',
+  ")",
+  sep = "\n"))
+expect_true(all(nchar(strsplit(usage29, "\n")[[1]]) <= 90))
+
+# 80-char boundary matches roxygen2: bare call of 79 chars stays single
+# line, 80 chars wraps
+arg79 <- strrep("a", 76)
+expect_equal(tinyrox:::format_usage("f", arg79), paste0("f(", arg79, ")"))
+arg80 <- strrep("a", 77)
+expect_equal(tinyrox:::format_usage("f", arg80), paste0("f(\n  ", arg80, "\n)"))
+
+# S3 method width decision uses the bare name, not the \method markup
+s3_args <- c("x", strrep("b", 60))
+s3_usage <- tinyrox:::format_usage("print.myclass", s3_args)
+expect_equal(s3_usage,
+             paste0("\\method{print}{myclass}(x, ", strrep("b", 60), ")"))
+
+# Replacement function wraps with the suffix after the closing paren
+repl_args <- c("x", strrep("y", 80), "value")
+repl_usage <- tinyrox:::format_usage("dim<-", repl_args)
+expect_equal(repl_usage,
+             paste0("dim(\n  x,\n  ", strrep("y", 80), "\n) <- value"))
+
+# wrap_usage_arg: quoted strings are never broken
+expect_equal(
+  tinyrox:::wrap_usage_arg('  x = c("a b c d e f", "g h i", "j k l")',
+                           width = 20L, indent = 4L),
+  '  x =\n    c("a b c d e f",\n    "g h i",\n    "j k l")')
+
+# wrap_usage_arg: short input returned unchanged
+expect_equal(tinyrox:::wrap_usage_arg("  x = 1"), "  x = 1")
+
+# End-to-end: generated Rd has no line wider than 90 chars
+tags29 <- list(
+  title = "Choose a provider",
+  description = "Chooses a provider",
+  details = NULL,
+  params = list(provider = "Provider id.", access_token = "Token."),
+  return = "NULL, invisibly.",
+  examples = NULL,
+  seealso = NULL,
+  references = NULL,
+  aliases = character(),
+  keywords = character(),
+  family = NULL,
+  name = "choose_provider",
+  noRd = FALSE
+)
+rd29 <- tinyrox:::generate_rd(tags29,
+                              list(names = c("provider", "access_token"),
+                                   usage = long_args))
+expect_true(all(nchar(strsplit(rd29, "\n")[[1]]) <= 90))

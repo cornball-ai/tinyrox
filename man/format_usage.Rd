@@ -18,7 +18,9 @@ Formatted usage string.
 }
 \description{
 Formats the function usage, wrapping to multiple lines if needed.
-Follows roxygen2 style: each argument on its own line if total > 80 chars.
-S3 methods use the \\method syntax.
+Follows roxygen2: single line when the bare call is under 80 characters,
+otherwise one argument per line at two-space indent, with each overlong
+argument wrapped to the 90-character Rd limit. S3 methods use the
+\\method syntax.
 }
 \keyword{internal}

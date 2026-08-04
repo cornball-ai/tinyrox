@@ -3,8 +3,13 @@
 \alias{document}
 \title{Generate Documentation for an R Package}
 \usage{
-document(path = ".", namespace = c("overwrite", "append", "none"),
-         cran_check = TRUE, silent = FALSE, prune_rd = TRUE)
+document(
+  path = ".",
+  namespace = c("overwrite", "append", "none"),
+  cran_check = TRUE,
+  silent = FALSE,
+  prune_rd = TRUE
+)
 }
 \arguments{
 \item{path}{Path to package root directory. Default is current directory.}
