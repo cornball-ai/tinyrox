@@ -16,7 +16,7 @@ No exported interfaces change.
 
 * local: Ubuntu 24.04, R 4.6.1
 * GitHub Actions: ubuntu-latest, macos-latest
-* Windows 10: R-devel
+* Windows 10: R-devel and R 4.6.0
 
 ## R CMD check results
 
