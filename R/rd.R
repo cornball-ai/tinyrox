@@ -379,7 +379,11 @@ format_usage <- function(name, args, pkg_generics = character()) {
     # Width decision is made on the bare name, like roxygen2: \method markup
     # and the replacement suffix are excluded, leaving headroom under the
     # 90-character Rd limit for the markup they add.
-    bare_name <- if (is_replacement) sub("<-$", "", name) else name
+    if (is_replacement) {
+        bare_name <- sub("<-$", "", name)
+    } else {
+        bare_name <- name
+    }
     bare <- paste0(bare_name, "(", paste(call_args, collapse = ", "), ")")
     if (nchar(bare, type = "width") < 80) {
         return(paste0(display_name, "(",
@@ -389,8 +393,7 @@ format_usage <- function(name, args, pkg_generics = character()) {
     # One argument per line at two-space indent, each wrapped to 90 chars
     wrapped <- vapply(paste0("  ", call_args), wrap_usage_arg,
                       character(1), USE.NAMES = FALSE)
-    paste0(display_name, "(\n", paste(wrapped, collapse = ",\n"), "\n)",
-           suffix)
+    paste0(display_name, "(\n", paste(wrapped, collapse = ",\n"), "\n)", suffix)
 }
 
 #' Wrap a Single Usage Argument
@@ -435,8 +438,8 @@ wrap_usage_arg <- function(x, width = 90L, indent = 4L) {
         }
 
         if (length(line) >= width && last_space > 0L) {
-            lines <- c(lines, paste(line[seq_len(last_space - 1L)],
-                                    collapse = ""))
+            lines <- c(lines,
+                       paste(line[seq_len(last_space - 1L)], collapse = ""))
             line <- c(pad, line[seq_along(line) > last_space])
             last_space <- 0L
         }

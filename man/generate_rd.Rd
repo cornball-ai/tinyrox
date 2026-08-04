@@ -3,7 +3,12 @@
 \alias{generate_rd}
 \title{Generate Rd File Content}
 \usage{
-generate_rd(tags, formals = NULL, source_file = NULL, pkg_generics = character())
+generate_rd(
+  tags,
+  formals = NULL,
+  source_file = NULL,
+  pkg_generics = character()
+)
 }
 \arguments{
 \item{tags}{Parsed tags from parse_tags().}
