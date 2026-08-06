@@ -90,6 +90,7 @@ document <- function(path = ".",
         message("Generating Rd files...")
     }
     rd_files <- generate_all_rd(blocks, path, cran_check)
+    check_rd_filenames(rd_files)
     if (!silent) {
         message("Generated ", length(rd_files), " Rd file(s).")
     }

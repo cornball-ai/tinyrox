@@ -1,3 +1,8 @@
+# tinyrox 0.4.1.1
+
+* Rd file names are portable for every topic, not just `%op%` and a leading dot. `$.foo`, `[[.foo` and `$<-.foo` are ordinary S3 methods, and the files named after them were being **dropped from the tarball**: `R CMD build` prints "excluding invalid files" and carries on, and the `R CMD check` that follows reads a tarball those files are no longer in, so nothing fails. glinty shipped four undocumented S3 methods that way with every CI job green.
+* The substitution table is roxygen2's, so a package moving between the two tools does not churn its `man` directory, and the two cases tinyrox already handled (`%||%`, a leading dot) come out spelled exactly as before. `document()` now refuses outright if a name it wrote would still be dropped.
+
 # tinyrox 0.4.1
 
 Two Rd-generation fixes.
