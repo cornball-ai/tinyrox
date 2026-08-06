@@ -510,39 +510,87 @@ write_rd <- function(content, name, path = ".") {
         dir.create(man_dir, recursive = TRUE)
     }
 
-    # Sanitize filename for Rd (like roxygen2)
-    # - Internal functions starting with . -> dot-name
-    # - Infix operators %X% -> grapes-X-grapes
-    filename <- name
-    if (grepl("^\\.", filename)) {
-        filename <- gsub("^\\.", "dot-", filename)
-    } else if (grepl("^%.*%$", filename)) {
-        # Encode infix operator: %||% -> grapes-or-or-grapes
-        # Only encode special characters, keep alphanumeric sequences intact
-        inner <- gsub("^%|%$", "", filename)
-        # Replace special characters with _WORD_ markers first
-        inner <- gsub("\\|", "_OR_", inner)
-        inner <- gsub("&", "_AND_", inner)
-        inner <- gsub("\\+", "_PLUS_", inner)
-        inner <- gsub("-", "_MINUS_", inner)
-        inner <- gsub("\\*", "_TIMES_", inner)
-        inner <- gsub("/", "_DIV_", inner)
-        inner <- gsub("<", "_LT_", inner)
-        inner <- gsub(">", "_GT_", inner)
-        inner <- gsub("=", "_EQ_", inner)
-        inner <- gsub("!", "_NOT_", inner)
-        # Convert markers to lowercase with - separators
-        inner <- gsub("_([A-Z]+)_", "-\\L\\1-", inner, perl = TRUE)
-        # Clean up multiple - and leading/trailing -
-        inner <- gsub("-+", "-", inner)
-        inner <- gsub("^-|-$", "", inner)
-        filename <- paste0("grapes-", inner, "-grapes")
-    }
-    filepath <- file.path(man_dir, paste0(filename, ".Rd"))
+    filepath <- file.path(man_dir, paste0(rd_filename(name), ".Rd"))
 
     writeLines(content, filepath, useBytes = TRUE)
 
     filepath
+}
+
+#' Refuse to Leave a File Name R CMD build Will Drop
+#'
+#' rd_filename() is supposed to make every name portable. This says so
+#' out loud rather than trusting it, because the failure is silent in
+#' both directions: `R CMD build` drops the file without an error, and
+#' the `R CMD check` that follows examines a tarball the file is no
+#' longer in.
+#'
+#' @param files Character vector of paths just written.
+#' @return invisible(TRUE)
+#' @keywords internal
+check_rd_filenames <- function(files) {
+    bad <- basename(files)[!grepl("^[A-Za-z0-9._-]+$", basename(files))]
+    if (length(bad) > 0) {
+        stop("these Rd file names are not portable, and R CMD build would ",
+             "drop them from the tarball without failing: ",
+             paste(bad, collapse = ", "), call. = FALSE)
+    }
+    invisible(TRUE)
+}
+
+#' What a Topic Is Called on Disk
+#'
+#' Replacements applied to a topic name to make a file name, longest
+#' key first so `[<-` is read before `[`. This is the table roxygen2
+#' uses, so a package moving between the two does not churn its `man`
+#' directory, and the two names tinyrox already handled -- `%||%` and
+#' a leading dot -- come out exactly as they did.
+#'
+#' @keywords internal
+RD_NAME_SUBS <- c("[<-" = "-subset-", "[" = "-sub-", "<-" = "-set-",
+                  "::" = "-", "!" = "-not-", "&" = "-and-", "|" = "-or-",
+                  "*" = "-times-", "+" = "-plus-", "^" = "-pow-",
+                  "\"" = "-quote-", "#" = "-hash-", "$" = "-cash-",
+                  "%" = "-grapes-", "'" = "-single-quote-",
+                  "(" = "-open-paren-", ")" = "-close-paren-",
+                  ":" = "-colon-", ";" = "-semi-colon-", "<" = "-less-than-",
+                  "==" = "-equals-", "=" = "-equals-",
+                  ">" = "-greater-than-", "?" = "-help-", "@" = "-at-",
+                  "]" = "-close-brace-", "\\" = "-backslash-",
+                  "/" = "-slash-", "`" = "-tick-", "{" = "-open-curly-",
+                  "}" = "-close-", "~" = "-twiddle-")
+
+#' Turn a Topic Name into a Portable File Name
+#'
+#' A topic can be called anything R can name, and `$.foo`, `[[.foo`
+#' and `$<-.foo` are ordinary S3 methods. Those characters are not
+#' legal in a file name on every platform R runs on, and `R CMD build`
+#' does not warn and carry on: it prints "excluding invalid files" and
+#' **drops them from the tarball**. The package then installs with no
+#' documentation for those methods, and `R CMD check` reports nothing,
+#' because it checks the tarball the files are no longer in. Green,
+#' and missing its docs.
+#'
+#' The `\\name{}` inside the file keeps the real topic, so help still
+#' resolves under it; only the file on disk is renamed.
+#'
+#' @param name Topic name.
+#' @return A file name stem, with no .Rd extension.
+#' @keywords internal
+rd_filename <- function(name) {
+    out <- name
+    for (i in seq_along(RD_NAME_SUBS)) {
+        out <- gsub(names(RD_NAME_SUBS)[[i]], RD_NAME_SUBS[[i]], out,
+                    fixed = TRUE)
+    }
+    # Anything still outside the portable set becomes a separator
+    # rather than being left to break the build later.
+    out <- gsub("[^A-Za-z0-9_.-]+", "-", out)
+    out <- gsub("-+", "-", out)
+    out <- gsub("^-|-$", "", out)
+    # A leading dot hides the file on unix and is dropped by some
+    # archivers; .onLoad and friends are ordinary topics.
+    gsub("^\\.", "dot-", out)
 }
 
 #' Identify a tinyrox-Generated Rd File
