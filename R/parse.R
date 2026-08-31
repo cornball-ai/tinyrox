@@ -146,6 +146,16 @@ parse_object_definition <- function(text, file, line_num) {
         return(list(name = "_PACKAGE", type = "package", formals = NULL))
     }
 
+    # Quoted-string directive: a bare "name" (or 'name') line after the
+    # block documents the dataset `name` (the roxygen convention for
+    # data documentation). Without this the block is dropped silently,
+    # since a string literal matches no assignment pattern below.
+    fl <- trimws(first_line)
+    if (grepl('^"[^"]+"$', fl) || grepl("^'[^']+'$", fl)) {
+        return(list(name = substr(fl, 2L, nchar(fl) - 1L), type = "data",
+                    formals = NULL))
+    }
+
     # Match: name <- or name =
     # Handles: foo <- function(...), foo <- value, foo = function(...)
     # Also handles backtick-quoted names: `%||%` <- function(...)

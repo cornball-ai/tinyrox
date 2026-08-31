@@ -5,7 +5,8 @@ SUPPORTED_DOC_TAGS <- c("title", "description", "details", "param",
                         "return", "returns", "value", "examples",
                         "example", "seealso", "references", "aliases",
                         "keywords", "family", "name", "rdname", "noRd",
-                        "inheritParams", "section", "author")
+                        "inheritParams", "section", "author", "format",
+                        "source")
 
 #' Supported Namespace Tags
 #'
@@ -227,6 +228,12 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
     },
            "references" = {
         result$references <- value
+    },
+           "format" = {
+        result$format <- value
+    },
+           "source" = {
+        result$source <- value
     },
            "aliases" = {
         # Split on whitespace

@@ -395,3 +395,54 @@ test_package_sentinel_document <- function() {
   expect_equal(res2$pruned, character(0))
 }
 test_package_sentinel_document()
+
+# --- Data documentation through the full document() flow: the "name" ---
+# directive plus @format and @source. Regression: the block used to be
+# dropped silently (no Rd, no warning), leaving the dataset undocumented.
+test_data_directive_document <- function() {
+  pkg <- file.path(tempdir(), "datapkg")
+  on.exit(unlink(pkg, recursive = TRUE), add = TRUE)
+  dir.create(file.path(pkg, "R"), recursive = TRUE, showWarnings = FALSE)
+  writeLines(c(
+      "Package: datapkg", "Title: T", "Version: 0.0.1",
+      "Description: D.",
+      "Authors@R: person('A', 'B', email='a@b.c', role=c('aut','cre'))"
+    ), file.path(pkg, "DESCRIPTION"))
+  writeLines(c(
+      "#' Example measurements",
+      "#'",
+      "#' Twelve made-up observations.",
+      "#'",
+      "#' @format A data frame with 12 rows and 2 columns:",
+      "#' \\describe{",
+      "#'   \\item{x}{Numeric. The measurement.}",
+      "#'   \\item{g}{Character. The group.}",
+      "#' }",
+      "#' @source Simulated for the test.",
+      "#' @examples",
+      "#' str(measurements)",
+      "\"measurements\""),
+      file.path(pkg, "R", "data.R"))
+
+  # No warnings: @format and @source are supported tags, not unknowns.
+  expect_silent(tinyrox::document(pkg, cran_check = FALSE, silent = TRUE))
+
+  rd_path <- file.path(pkg, "man", "measurements.Rd")
+  expect_true(file.exists(rd_path))
+  rd <- readLines(rd_path)
+  expect_true("\\docType{data}" %in% rd)
+  expect_true("\\alias{measurements}" %in% rd)
+  expect_true("\\keyword{datasets}" %in% rd)
+  # The author's @format survives, markup intact, over the auto fallback
+  expect_true(any(grepl("12 rows and 2 columns", rd)))
+  expect_true(any(grepl("\\item{x}{Numeric. The measurement.}", rd,
+                        fixed = TRUE)))
+  # @source is rendered
+  expect_true("\\source{" %in% rd)
+  expect_true(any(grepl("Simulated for the test.", rd, fixed = TRUE)))
+  # Usage is the bare object name, and the dataset is not exported
+  expect_true("measurements" %in% rd)
+  ns <- readLines(file.path(pkg, "NAMESPACE"))
+  expect_false(any(grepl("measurements", ns, fixed = TRUE)))
+}
+test_data_directive_document()
