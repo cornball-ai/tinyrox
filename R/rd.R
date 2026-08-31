@@ -194,10 +194,12 @@ generate_data_rd <- function(tags, source_file = NULL, format_string = NULL) {
     }
     lines <- c(lines, paste0("\\title{", escape_rd(title), "}"))
 
-    # Format section (roxygen2 auto-generates this)
-    if (!is.null(format_string)) {
+    # Format section: an author's @format wins; otherwise fall back to
+    # the auto-generated description of the object (roxygen2 behavior)
+    fmt <- if (!is.null(tags$format)) escape_rd(tags$format) else format_string
+    if (!is.null(fmt)) {
         lines <- c(lines, "\\format{")
-        lines <- c(lines, format_string)
+        lines <- c(lines, fmt)
         lines <- c(lines, "}")
     }
 
@@ -223,6 +225,13 @@ generate_data_rd <- function(tags, source_file = NULL, format_string = NULL) {
     if (!is.null(tags$details)) {
         lines <- c(lines, "\\details{")
         lines <- c(lines, escape_rd(tags$details))
+        lines <- c(lines, "}")
+    }
+
+    # Source (where the data came from)
+    if (!is.null(tags$source)) {
+        lines <- c(lines, "\\source{")
+        lines <- c(lines, escape_rd(tags$source))
         lines <- c(lines, "}")
     }
 

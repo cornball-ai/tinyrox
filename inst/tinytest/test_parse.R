@@ -140,3 +140,28 @@ expect_warning(blocks <- tinyrox:::parse_file(tmp),
 expect_equal(length(blocks), 1)
 expect_equal(blocks[[1]]$object, "real_fn")
 unlink(tmp)
+
+# Quoted-string data directive: a block over a bare "name" line documents
+# the dataset `name` (roxygen convention). Both quote styles; the
+# _PACKAGE sentinel keeps its own type and must not be shadowed.
+tmp <- tempfile(fileext = ".R")
+writeLines(c(
+  "#' My dataset",
+  "#'",
+  "#' @format A data frame.",
+  "\"mydata\"",
+  "",
+  "#' Single-quoted dataset",
+  "'otherdata'",
+  "",
+  "#' The package",
+  "\"_PACKAGE\""
+), tmp)
+blocks <- tinyrox:::parse_file(tmp)
+expect_equal(length(blocks), 3)
+expect_equal(blocks[[1]]$object, "mydata")
+expect_equal(blocks[[1]]$type, "data")
+expect_equal(blocks[[2]]$object, "otherdata")
+expect_equal(blocks[[2]]$type, "data")
+expect_equal(blocks[[3]]$type, "package")
+unlink(tmp)
