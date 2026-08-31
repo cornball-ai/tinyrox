@@ -1,3 +1,7 @@
+# tinyrox 0.4.1.2
+
+* Datasets are documented. A block over a bare `"name"` line (the roxygen data convention) used to be dropped silently: no Rd, no warning, and `R CMD check` then reported the dataset undocumented. The directive now parses like the `"_PACKAGE"` sentinel, `@format` and `@source` are supported tags (an author's `@format` wins over the auto-introspected one), and data pages carry `\source{}`. Found standing up examen's `are` dataset.
+
 # tinyrox 0.4.1.1
 
 * Rd file names are portable for every topic, not just `%op%` and a leading dot. `$.foo`, `[[.foo` and `$<-.foo` are ordinary S3 methods, and the files named after them were being **dropped from the tarball**: `R CMD build` prints "excluding invalid files" and carries on, and the `R CMD check` that follows reads a tarball those files are no longer in, so nothing fails. glinty shipped four undocumented S3 methods that way with every CI job green.
