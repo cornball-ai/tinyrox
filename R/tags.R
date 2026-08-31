@@ -5,8 +5,8 @@ SUPPORTED_DOC_TAGS <- c("title", "description", "details", "param",
                         "return", "returns", "value", "examples",
                         "example", "seealso", "references", "aliases",
                         "keywords", "family", "name", "rdname", "noRd",
-                        "inheritParams", "section", "author",
-                        "format", "source")
+                        "inheritParams", "section", "author", "format",
+                        "source")
 
 #' Supported Namespace Tags
 #'

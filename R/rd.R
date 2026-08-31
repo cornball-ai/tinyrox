@@ -196,7 +196,11 @@ generate_data_rd <- function(tags, source_file = NULL, format_string = NULL) {
 
     # Format section: an author's @format wins; otherwise fall back to
     # the auto-generated description of the object (roxygen2 behavior)
-    fmt <- if (!is.null(tags$format)) escape_rd(tags$format) else format_string
+    if (!is.null(tags$format)) {
+        fmt <- escape_rd(tags$format)
+    } else {
+        fmt <- format_string
+    }
     if (!is.null(fmt)) {
         lines <- c(lines, "\\format{")
         lines <- c(lines, fmt)

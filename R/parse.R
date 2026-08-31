@@ -152,8 +152,8 @@ parse_object_definition <- function(text, file, line_num) {
     # since a string literal matches no assignment pattern below.
     fl <- trimws(first_line)
     if (grepl('^"[^"]+"$', fl) || grepl("^'[^']+'$", fl)) {
-        return(list(name = substr(fl, 2L, nchar(fl) - 1L),
-                    type = "data", formals = NULL))
+        return(list(name = substr(fl, 2L, nchar(fl) - 1L), type = "data",
+                    formals = NULL))
     }
 
     # Match: name <- or name =
