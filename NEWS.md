@@ -1,3 +1,7 @@
+# tinyrox 0.4.1.3
+
+* A replacement S3 method (`$<-.myclass`, `[[<-.myclass`, `dim<-.myclass`) was given the usage `\method{$<-}{myclass}(x, name, value)`, which `R CMD check` reports as a bad `\usage` line: the `<-` sits on the generic, not at the end of the name, so the replacement test never fired. It is `\method{$}{myclass}(x, name) <- value` now, as for a plain replacement function. Found in glinty's two output-registration methods.
+
 # tinyrox 0.4.1.2
 
 * Datasets are documented. A block over a bare `"name"` line (the roxygen data convention) used to be dropped silently: no Rd, no warning, and `R CMD check` then reported the dataset undocumented. The directive now parses like the `"_PACKAGE"` sentinel, `@format` and `@source` are supported tags (an author's `@format` wins over the auto-introspected one), and data pages carry `\source{}`. Found standing up examen's `are` dataset.
