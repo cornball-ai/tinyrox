@@ -371,11 +371,18 @@ escape_rd <- function(text) {
 #' @return Formatted usage string.
 #' @keywords internal
 format_usage <- function(name, args, pkg_generics = character()) {
-    # Check if it's a replacement function (name ends with <-)
-    is_replacement <- grepl("<-$", name)
-
     # Check if it's an S3 method
     s3_info <- detect_s3_method(name, pkg_generics)
+
+    # A replacement function's name ends with <-; a replacement S3
+    # method's generic does, with the class after it (`$<-.myclass`),
+    # so the test is on the generic when there is one.
+    if (!is.null(s3_info)) {
+        is_replacement <- grepl("<-$", s3_info$generic)
+    } else {
+        is_replacement <- grepl("<-$", name)
+    }
+
     if (!is.null(s3_info)) {
         gen_display <- s3_info$generic
         if (is_replacement) {
@@ -404,7 +411,7 @@ format_usage <- function(name, args, pkg_generics = character()) {
     # and the replacement suffix are excluded, leaving headroom under the
     # 90-character Rd limit for the markup they add.
     if (is_replacement) {
-        bare_name <- sub("<-$", "", name)
+        bare_name <- sub("<-", "", name, fixed = TRUE)
     } else {
         bare_name <- name
     }

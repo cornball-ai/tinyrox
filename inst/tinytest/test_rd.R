@@ -283,6 +283,21 @@ repl_usage <- tinyrox:::format_usage("dim<-", repl_args)
 expect_equal(repl_usage,
              paste0("dim(\n  x,\n  ", strrep("y", 80), "\n) <- value"))
 
+# A replacement S3 method: the `<-` sits on the generic, not at the end
+# of the name, and R CMD check wants the generic without it and value on
+# the right (`\method{$}{cls}(x, name) <- value`), never
+# `\method{$<-}{cls}(x, name, value)`.
+expect_equal(tinyrox:::format_usage("$<-.myclass", c("x", "name", "value")),
+             "\\method{$}{myclass}(x, name) <- value")
+expect_equal(tinyrox:::format_usage("[[<-.myclass", c("x", "i", "value")),
+             "\\method{[[}{myclass}(x, i) <- value")
+expect_equal(tinyrox:::format_usage("dim<-.myclass", c("x", "value")),
+             "\\method{dim}{myclass}(x) <- value")
+# and a replacement generic defined in the package itself
+expect_equal(tinyrox:::format_usage("label<-.myclass", c("x", "value"),
+                                    pkg_generics = "label<-"),
+             "\\method{label}{myclass}(x) <- value")
+
 # wrap_usage_arg: quoted strings are never broken
 expect_equal(
   tinyrox:::wrap_usage_arg('  x = c("a b c d e f", "g h i", "j k l")',
