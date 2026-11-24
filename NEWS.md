@@ -1,8 +1,11 @@
 # tinyrox 0.4.1.5
 
-* A bare `@exportS3Method` registers the method (#37). With no argument the tag was dropped silently: no `S3method()` line and no export, so dispatch failed at runtime. Generic and class now come from the object name, a known or package-defined generic first (`as.data.frame.foo`), and a name with no dot to split on warns.
 * `@exportS3Method pkg::generic` writes `S3method(pkg::generic,class)`, R's delayed registration for a generic the package does not import. It used to drop the `pkg::` prefix, and the two-argument form quoted it; either way the method was never registered. The class is the object name with `generic.` removed, and a name that does not start that way warns.
 * `@examplesIf cond` is supported (#39). It was an unknown tag, so its examples were skipped with a warning and the page shipped with none. The output matches roxygen2: the guard sits in `\dontshow{}` and the help page shows only the example code. Several example tags on one block now all reach the page, in the order written; a second `@examples` used to replace the first.
+
+# tinyrox 0.4.1.4
+
+* A bare `@exportS3Method` registers the method (#37). With no argument the tag was dropped silently: no `S3method()` line and no export, so dispatch failed at runtime. Generic and class now come from the object name, a known or package-defined generic first (`as.data.frame.foo`), and a name with no dot to split on warns.
 * `@param a,b desc` documents both formals for the undocumented-parameter check (#40). The Rd was already right (`\item{a,b}{...}`); the check compared the joined name against each formal and reported both as undocumented. A joined name also sorts at its earliest formal in `\arguments`.
 * The missing-examples check runs per Rd page (#41). A function merged into a page through `@rdname` is no longer reported when another block on the page carries the examples, and a bare `@export` above an S3 method, which generates no page, is skipped.
 * `check_cran()` warns when roxygen text contains markdown that ships verbatim (#42): backticked terms and `[fn()]` links, reported once per file. Example code, `@noRd` blocks, and text already inside `\code{}` are ignored. Nothing is converted. Silence it with `options(tinyrox.markdown_check = FALSE)`. The result list gains a `markdown` element.
