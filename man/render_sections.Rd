@@ -6,7 +6,7 @@
 render_sections(sections)
 }
 \arguments{
-\item{sections}{List of `list(title=, content=)` from parse_tags().}
+\item{sections}{List of \code{list(title=, content=)} from parse_tags().}
 }
 \value{
 Character vector of Rd lines (empty when there are no sections).

@@ -3,6 +3,5 @@
 ^\.github$
 ^CLAUDE\.md$
 ^\.claude$
-^fyi\.md$
 ^cran-comments\.md$
 ^tools$

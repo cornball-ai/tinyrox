@@ -122,3 +122,34 @@ expect_equal(tags_returns$return, "The result value")
 lines_return <- c("Title", "@return The result value")
 tags_return <- tinyrox:::parse_tags(lines_return, "foo")
 expect_equal(tags_returns$return, tags_return$return)
+
+# @examplesIf wraps the examples in a hidden guard, as roxygen2 does (#39)
+lines_if <- c("Title", "@examplesIf requireNamespace(\"stats\", quietly = TRUE)",
+              "f(1)", "", "@export")
+tags_if <- tinyrox:::parse_tags(lines_if, "f")
+expect_equal(tags_if$examples, paste(
+  "\\dontshow{if (requireNamespace(\"stats\", quietly = TRUE)) withAutoprint(\\{ # examplesIf}",
+  "f(1)",
+  "\\dontshow{\\}) # examplesIf}",
+  sep = "\n"))
+expect_true(tags_if$export)
+
+# The generated page is valid Rd and keeps the example
+rd_if <- tinyrox:::generate_rd(tags_if, list(names = "x", usage = "x"))
+rd_if_file <- tempfile(fileext = ".Rd")
+writeLines(rd_if, rd_if_file)
+expect_equal(length(tools::checkRd(rd_if_file)), 0L)
+expect_true(grepl("\\examples{", rd_if, fixed = TRUE))
+unlink(rd_if_file)
+
+# Plain and conditional examples on one block both reach the page, in order
+lines_mix <- c("Title", "@examples", "a()", "@examplesIf interactive()", "b()")
+tags_mix <- tinyrox:::parse_tags(lines_mix, "f")
+expect_true(grepl("^a\\(\\)\n\\\\dontshow\\{if \\(interactive\\(\\)\\)",
+                  tags_mix$examples))
+expect_true(grepl("b()", tags_mix$examples, fixed = TRUE))
+
+# No condition: warn and keep the examples
+expect_warning(tags_nocond <- tinyrox:::parse_tags(
+  c("Title", "@examplesIf", "f(1)"), "f"), "no condition")
+expect_equal(tags_nocond$examples, "f(1)")

@@ -200,3 +200,95 @@ expect_silent(tinyrox:::write_namespace(keep_content, tmp_pkg))
 unlink(file.path(tmp_pkg, "NAMESPACE"))
 expect_silent(tinyrox:::write_namespace(new_content, tmp_pkg))
 unlink(tmp_pkg, recursive = TRUE)
+
+# Bare @exportS3Method infers generic and class from the object name (#37)
+blocks_bare <- list(
+  list(
+    lines = c("@exportS3Method"),
+    object = "print.myclass",
+    type = "function",
+    formals = list(names = c("x", "..."), usage = c("x", "...")),
+    file = "test.R",
+    line = 1
+  ),
+  list(
+    lines = c("@exportS3Method"),
+    object = "as.data.frame.myclass",
+    type = "function",
+    formals = list(names = "x", usage = "x"),
+    file = "test.R",
+    line = 5
+  ),
+  list(
+    lines = c("@exportS3Method"),
+    object = "poll.my_client",
+    type = "function",
+    formals = list(names = "x", usage = "x"),
+    file = "test.R",
+    line = 9
+  )
+)
+ns_bare <- tinyrox:::generate_namespace(blocks_bare)
+expect_true(grepl("S3method(print,myclass)", ns_bare, fixed = TRUE))
+expect_true(grepl("S3method(as.data.frame,myclass)", ns_bare, fixed = TRUE))
+expect_true(grepl("S3method(poll,my_client)", ns_bare, fixed = TRUE))
+
+# A bare tag on a name with no dot registers nothing and says so
+blocks_nodot <- list(
+  list(
+    lines = c("@exportS3Method"),
+    object = "nodot",
+    type = "function",
+    formals = list(names = "x", usage = "x"),
+    file = "test.R",
+    line = 1
+  )
+)
+expect_warning(ns_nodot <- tinyrox:::generate_namespace(blocks_nodot),
+               "nothing was registered")
+expect_false(grepl("S3method", ns_nodot))
+
+# @export plus @exportS3Method on one block registers the method once
+blocks_both <- list(
+  list(
+    lines = c("Print it", "@export", "@exportS3Method"),
+    object = "print.myclass",
+    type = "function",
+    formals = list(names = c("x", "..."), usage = c("x", "...")),
+    file = "test.R",
+    line = 1
+  )
+)
+ns_both <- tinyrox:::generate_namespace(blocks_both)
+
+# @exportS3Method pkg::generic keeps the prefix for delayed registration
+s3_block <- function(tag, object) {
+  list(list(lines = tag, object = object, type = "function",
+            formals = list(names = "x", usage = "x"),
+            file = "test.R", line = 1))
+}
+ns_pkg <- tinyrox:::generate_namespace(
+  s3_block("@exportS3Method knitr::knit_print", "knit_print.my.class"))
+expect_true(grepl("S3method(knitr::knit_print,my.class)", ns_pkg, fixed = TRUE))
+expect_false(grepl("\"", ns_pkg, fixed = TRUE))
+
+ns_pkg2 <- tinyrox:::generate_namespace(
+  s3_block("@exportS3Method knitr::knit_print foo", "anything"))
+expect_true(grepl("S3method(knitr::knit_print,foo)", ns_pkg2, fixed = TRUE))
+
+# R reads the directive as a delayed registration
+ns_pkg_file <- file.path(tempfile("nsdir"), "NAMESPACE")
+dir.create(dirname(ns_pkg_file))
+writeLines(ns_pkg, ns_pkg_file)
+parsed_ns <- parseNamespaceFile(basename(dirname(ns_pkg_file)),
+                                dirname(dirname(ns_pkg_file)))
+expect_equal(unname(parsed_ns$S3methods[1, c(1, 2, 4)]),
+             c("knit_print", "my.class", "knitr"))
+unlink(dirname(ns_pkg_file), recursive = TRUE)
+
+# The object name must start with the generic for the class to be known
+expect_warning(ns_pkg_bad <- tinyrox:::generate_namespace(
+  s3_block("@exportS3Method knitr::knit_print", "print.foo")),
+  "nothing was registered")
+expect_false(grepl("S3method", ns_pkg_bad))
+expect_equal(lengths(regmatches(ns_both, gregexpr("S3method\\(", ns_both))), 1L)

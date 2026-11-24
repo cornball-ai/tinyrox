@@ -3,7 +3,7 @@
 #' @keywords internal
 SUPPORTED_DOC_TAGS <- c("title", "description", "details", "param",
                         "return", "returns", "value", "examples",
-                        "example", "seealso", "references", "aliases",
+                        "examplesIf", "example", "seealso", "references", "aliases",
                         "keywords", "family", "name", "rdname", "noRd",
                         "inheritParams", "section", "author", "format",
                         "source")
@@ -159,6 +159,22 @@ parse_tags <- function(lines, object_name, file = NULL, line_num = NULL) {
     result
 }
 
+#' Add Example Code to What a Block Already Has
+#'
+#' A block can carry several example tags (plain and conditional); they
+#' all go on the one page, in the order written.
+#'
+#' @param existing Examples collected so far, or NULL.
+#' @param code Example code to add.
+#' @return The combined examples text.
+#' @keywords internal
+append_examples <- function(existing, code) {
+    if (is.null(existing) || !nzchar(trimws(existing))) {
+        return(code)
+    }
+    paste(existing, code, sep = "\n")
+}
+
 #' Save a Parsed Tag Value
 #'
 #' @param result Current result list to update.
@@ -218,10 +234,30 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
            "example" = {
         # Examples are verbatim - include the arg if present
         if (!is.null(arg)) {
-            result$examples <- paste(c(arg, accumulator), collapse = "\n")
+            code <- paste(c(arg, accumulator), collapse = "\n")
         } else {
-            result$examples <- paste(accumulator, collapse = "\n")
+            code <- paste(accumulator, collapse = "\n")
         }
+        result$examples <- append_examples(result$examples, code)
+    },
+           "examplesIf" = {
+        # @examplesIf cond: the first line is the condition, the rest the
+        # examples. Rendered as roxygen2 does, with the guard hidden in
+        # \dontshow{} so the help page shows only the example code.
+        body <- accumulator
+        while (length(body) > 0 && !nzchar(trimws(body[length(body)]))) {
+            body <- body[-length(body)]
+        }
+        code <- paste(body, collapse = "\n")
+        if (is.null(arg)) {
+            warning("@examplesIf has no condition; its examples run ",
+                    "unconditionally.", call. = FALSE)
+        } else {
+            code <- paste0("\\dontshow{if (", arg,
+                           ") withAutoprint(\\{ # examplesIf}\n", code,
+                           "\n\\dontshow{\\}) # examplesIf}")
+        }
+        result$examples <- append_examples(result$examples, code)
     },
            "seealso" = {
         result$seealso <- value
@@ -266,8 +302,15 @@ save_tag <- function(result, tag, arg, accumulator, file, line_num) {
         if (length(parts) >= 2) {
             result$exportS3Method <- list(generic = parts[1], class = parts[2])
         } else if (length(parts) == 1 && nchar(parts[1]) > 0) {
-            # Try to infer from object name (e.g., print.foo)
+            # One argument. "pkg::generic" names another package's generic
+            # and the class comes from the object name; anything else is
+            # inferred from the object name alone (e.g., print.foo).
             result$exportS3Method <- list(explicit = parts[1])
+        } else {
+            # Bare tag: generic and class both come from the object name.
+            # strsplit("") yields character(0), so without this branch the
+            # tag vanished and the method was never registered (#37).
+            result$exportS3Method <- list(explicit = TRUE)
         }
     },
            "import" = {

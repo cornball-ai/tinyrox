@@ -33,9 +33,13 @@ check_cran <- function(path = ".") {
     code_result <- check_code_cran(path)
     example_result <- check_examples_cran(path)
 
-    all_issues <- list(code = code_result, examples = example_result)
+    markdown_result <- check_markdown_rd(path)
 
-    has_issues <- length(code_result) > 0 || length(example_result) > 0
+    all_issues <- list(code = code_result, examples = example_result,
+                       markdown = markdown_result)
+
+    has_issues <- length(code_result) > 0 || length(example_result) > 0 ||
+        length(markdown_result) > 0
 
     if (!has_issues) {
         message("No CRAN compliance issues found")
@@ -80,14 +84,16 @@ check_examples_cran <- function(path = ".") {
         return(character())
     }
 
-    missing_examples <- character()
+    # document() parses the package again and reports parse warnings
+    # (orphaned blocks, unknown tags) itself; repeating them here would
+    # only print each one twice.
+    blocks <- suppressWarnings(parse_package(path))
+    missing_examples <- suppressWarnings(find_exports_without_examples(blocks))
     dontrun_fns <- character()
     long_lines <- character()
 
     for (file in r_files) {
         content <- readLines(file, warn = FALSE)
-        file_missing <- find_exports_without_examples(content)
-        missing_examples <- c(missing_examples, file_missing)
         file_dontrun <- find_dontrun_examples(content)
         dontrun_fns <- c(dontrun_fns, file_dontrun)
         file_long <- find_long_example_lines(content, basename(file))
@@ -119,53 +125,50 @@ check_examples_cran <- function(path = ".") {
 
 #' Find Exported Functions Without Examples
 #'
-#' Parses R file content to find @export tags without @examples.
+#' Examples belong to an Rd page, and blocks sharing an @rdname share one
+#' page, so the check runs per topic: an exported function is reported only
+#' when no block on its page carries examples. A block that generates no
+#' page (a bare @export above an S3 method, or @noRd) is skipped, since
+#' there is nowhere for an example to live.
 #'
-#' @param lines Character vector of file lines
+#' @param blocks List of documentation blocks from parse_package()
 #' @return Character vector of function names missing examples
-find_exports_without_examples <- function(lines) {
-    missing <- character()
-    in_doc_block <- FALSE
-    has_export <- FALSE
-    has_examples <- FALSE
-    block_start <- 0
+find_exports_without_examples <- function(blocks) {
+    exported <- character()
+    exported_topic <- character()
+    topics_with_examples <- character()
 
-    for (i in seq_along(lines)) {
-        line <- lines[i]
+    for (block in blocks) {
+        if (!block$type %in% c("function", "nn_module", "data")) {
+            next
+        }
+        tags <- parse_tags(block$lines, block$object, block$file, block$line)
 
-        # Start of doc block
-        if (grepl("^##?'", line)) {
-            if (!in_doc_block) {
-                in_doc_block <- TRUE
-                has_export <- FALSE
-                has_examples <- FALSE
-                block_start <- i
-            }
+        # Same page test as generate_all_rd()
+        if (tags$noRd ||
+            (is.null(tags$title) && is.null(tags$description) &&
+                is.null(tags$rdname))) {
+            next
+        }
 
-            # Check for export tag
-            if (grepl("^##?'\\s*@export", line)) {
-                has_export <- TRUE
-            }
+        if (!is.null(tags$rdname)) {
+            topic <- tags$rdname
+        } else {
+            topic <- tags$name
+        }
 
-            # Check for examples tag
-            if (grepl("^##?'\\s*@examples", line)) {
-                has_examples <- TRUE
-            }
-        } else if (in_doc_block) {
-            # End of doc block - check if it's a function definition
-            in_doc_block <- FALSE
+        if (!is.null(tags$examples) && nzchar(trimws(tags$examples))) {
+            topics_with_examples <- c(topics_with_examples, topic)
+        }
 
-            if (has_export && !has_examples) {
-                # Try to get function name from next non-blank line
-                func_name <- extract_function_name(line)
-                if (!is.null(func_name)) {
-                    missing <- c(missing, func_name)
-                }
-            }
+        is_exported <- tags$export || !is.null(tags$exportS3Method)
+        if (is_exported && block$type == "function") {
+            exported <- c(exported, block$object)
+            exported_topic <- c(exported_topic, topic)
         }
     }
 
-    missing
+    exported[!exported_topic %in% topics_with_examples]
 }
 
 #' Find Exported Functions Using dontrun in Examples
@@ -248,6 +251,103 @@ find_long_example_lines <- function(lines, filename) {
             if (nchar(content) > 100) {
                 found <- c(found,
                            paste0(filename, ":", i, " (", nchar(content), " chars)"))
+            }
+        }
+    }
+
+    found
+}
+
+#' Warn About Markdown That Ships Verbatim
+#'
+#' tinyrox does no markdown parsing, so backticked text and bracketed
+#' function links written in the roxygen2 markdown habit reach the Rd
+#' unchanged and render literally in help pages and the PDF manual.
+#' R CMD check says nothing about them. This reports each affected file
+#' once. Set options(tinyrox.markdown_check = FALSE) to silence it for a
+#' package that uses backticks on purpose.
+#'
+#' @param path Path to package root directory
+#' @return Named list, one integer vector of line numbers per affected
+#'   file (invisibly); empty when nothing was found or the check is off.
+#' @keywords internal
+check_markdown_rd <- function(path = ".") {
+    if (!isTRUE(getOption("tinyrox.markdown_check", TRUE))) {
+        return(invisible(list()))
+    }
+
+    r_files <- list.files(file.path(path, "R"), pattern = "\\.R$",
+                          full.names = TRUE, ignore.case = TRUE)
+    found <- list()
+    for (file in r_files) {
+        hits <- find_markdown_lines(readLines(file, warn = FALSE))
+        if (length(hits) > 0) {
+            found[[basename(file)]] <- hits
+        }
+    }
+
+    if (length(found) > 0) {
+        report <- vapply(names(found), function(f) {
+            paste0("  ", f, ": ", length(found[[f]]), " line(s), first at ",
+                   f, ":", found[[f]][1])
+        }, character(1))
+        warning("Markdown is not converted and ships verbatim in the Rd. ",
+                "Write \\code{x} for a backticked x and \\code{\\link{fn}} ",
+                "for a bracketed fn() link:\n",
+                paste(report, collapse = "\n"),
+                "\nSilence with options(tinyrox.markdown_check = FALSE).",
+                call. = FALSE)
+    }
+
+    invisible(found)
+}
+
+#' Find Documentation Lines Containing Markdown
+#'
+#' Flags backtick pairs and bracketed function links in documentation
+#' prose. Example code is skipped (backticks are R syntax there), as are
+#' blocks tagged noRd (they ship nowhere) and text already inside an Rd
+#' code macro.
+#'
+#' @param lines Character vector of file lines
+#' @return Integer vector of line numbers
+#' @keywords internal
+find_markdown_lines <- function(lines) {
+    is_doc <- grepl("^##?'", lines)
+    if (!any(is_doc)) {
+        return(integer())
+    }
+
+    # Consecutive doc lines form one block, as in parse_file()
+    block_id <- cumsum(c(TRUE, diff(is_doc) != 0))
+    text <- sub("^##?'\\s?", "", lines)
+    found <- integer()
+
+    for (id in unique(block_id[is_doc])) {
+        idx <- which(block_id == id)
+        if (any(grepl("^\\s*@noRd\\b", text[idx]))) {
+            next
+        }
+        in_examples <- FALSE
+        for (i in idx) {
+            tag <- regmatches(text[i], regexec("^\\s*@([a-zA-Z0-9]+)", text[i]))[[1]]
+            if (length(tag) == 2) {
+                in_examples <- tag[2] %in% c("examples", "example",
+                                             "examplesIf")
+                if (tag[2] %in% c("name", "rdname", "aliases",
+                                  SUPPORTED_NS_TAGS)) {
+                    next
+                }
+            }
+            if (in_examples) {
+                next
+            }
+            # Drop spans already in an Rd code macro: \code{`[`} is correct
+            prose <- gsub("\\\\(code|verb|samp|preformatted|eqn|deqn)\\{[^{}]*\\}",
+                          "", text[i])
+            if (grepl("`[^`]+`", prose) ||
+                grepl("\\[[A-Za-z0-9._:]+\\(\\)\\]", prose)) {
+                found <- c(found, i)
             }
         }
     }

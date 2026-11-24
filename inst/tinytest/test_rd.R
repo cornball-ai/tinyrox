@@ -461,3 +461,11 @@ test_data_directive_document <- function() {
   expect_false(any(grepl("measurements", ns, fixed = TRUE)))
 }
 test_data_directive_document()
+
+# Comma-separated @param names sort at their earliest formal (#40)
+expect_equal(tinyrox:::order_params(c("z", "b,c", "a"), c("a", "b", "c")),
+             c("a", "b,c", "z"))
+expect_equal(tinyrox:::order_params(c("y", "x"), character()), c("y", "x"))
+expect_equal(tinyrox:::documented_params(list("a,b" = "d", c = "e")),
+             c("a", "b", "c"))
+expect_equal(tinyrox:::documented_params(list()), character())

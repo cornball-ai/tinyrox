@@ -12,7 +12,7 @@ RD_MARKER <- "% tinyrox says don't edit this manually, but it can't stop you!"
 #' passed through verbatim as Rd (tinyrox does no markdown parsing), matching
 #' how the title-only macros elsewhere treat hand-written Rd markup.
 #'
-#' @param sections List of `list(title=, content=)` from parse_tags().
+#' @param sections List of \code{list(title=, content=)} from parse_tags().
 #' @return Character vector of Rd lines (empty when there are no sections).
 #' @keywords internal
 render_sections <- function(sections) {
@@ -23,6 +23,47 @@ render_sections <- function(sections) {
         lines <- c(lines, "}")
     }
     lines
+}
+
+#' Formals a Set of @param Tags Documents
+#'
+#' One @param can document several formals at once ("@param a,b desc",
+#' rendered as one Rd item named "a,b"). The Rd keeps the joined name; the
+#' undocumented-parameter check needs the individual ones.
+#'
+#' @param params Named list of parameter descriptions from parse_tags().
+#' @return Character vector of individual formal names.
+#' @keywords internal
+documented_params <- function(params) {
+    if (length(params) == 0) {
+        return(character())
+    }
+    trimws(unlist(strsplit(names(params), ",", fixed = TRUE)))
+}
+
+#' Order @param Names by the Function's Formals
+#'
+#' Formals order first, then anything matching no formal in the order
+#' written. A joined name ("a,b") sorts at its earliest formal.
+#'
+#' @param param_names Character vector of @param names.
+#' @param formal_names Character vector of formal argument names.
+#' @return param_names, reordered.
+#' @keywords internal
+order_params <- function(param_names, formal_names) {
+    if (length(formal_names) == 0 || length(param_names) == 0) {
+        return(param_names)
+    }
+    pos <- vapply(param_names, function(p) {
+        parts <- trimws(strsplit(p, ",", fixed = TRUE)[[1]])
+        hit <- match(parts, formal_names)
+        if (all(is.na(hit))) {
+            NA_integer_
+        } else {
+            min(hit, na.rm = TRUE)
+        }
+    }, integer(1))
+    param_names[order(pos, na.last = TRUE)]
 }
 
 #' Generate Rd File Content
@@ -78,12 +119,7 @@ generate_rd <- function(tags, formals = NULL, source_file = NULL,
         } else {
             formal_names <- character()
         }
-        param_order <- if (length(formal_names) > 0) {
-            c(intersect(formal_names, names(tags$params)),
-                setdiff(names(tags$params), formal_names))
-        } else {
-            names(tags$params)
-        }
+        param_order <- order_params(names(tags$params), formal_names)
         for (i in seq_along(param_order)) {
             param <- param_order[i]
             desc_text <- escape_rd(tags$params[[param]])
@@ -541,8 +577,8 @@ write_rd <- function(content, name, path = ".") {
 #'
 #' rd_filename() is supposed to make every name portable. This says so
 #' out loud rather than trusting it, because the failure is silent in
-#' both directions: `R CMD build` drops the file without an error, and
-#' the `R CMD check` that follows examines a tarball the file is no
+#' both directions: \code{R CMD build} drops the file without an error, and
+#' the \code{R CMD check} that follows examines a tarball the file is no
 #' longer in.
 #'
 #' @param files Character vector of paths just written.
@@ -561,9 +597,9 @@ check_rd_filenames <- function(files) {
 #' What a Topic Is Called on Disk
 #'
 #' Replacements applied to a topic name to make a file name, longest
-#' key first so `[<-` is read before `[`. This is the table roxygen2
-#' uses, so a package moving between the two does not churn its `man`
-#' directory, and the two names tinyrox already handled -- `%||%` and
+#' key first so \code{[<-} is read before \code{[}. This is the table roxygen2
+#' uses, so a package moving between the two does not churn its \code{man}
+#' directory, and the two names tinyrox already handled -- \code{%||%} and
 #' a leading dot -- come out exactly as they did.
 #'
 #' @keywords internal
@@ -582,16 +618,16 @@ RD_NAME_SUBS <- c("[<-" = "-subset-", "[" = "-sub-", "<-" = "-set-",
 
 #' Turn a Topic Name into a Portable File Name
 #'
-#' A topic can be called anything R can name, and `$.foo`, `[[.foo`
-#' and `$<-.foo` are ordinary S3 methods. Those characters are not
-#' legal in a file name on every platform R runs on, and `R CMD build`
+#' A topic can be called anything R can name, and \code{$.foo}, \code{[[.foo}
+#' and \code{$<-.foo} are ordinary S3 methods. Those characters are not
+#' legal in a file name on every platform R runs on, and \code{R CMD build}
 #' does not warn and carry on: it prints "excluding invalid files" and
 #' **drops them from the tarball**. The package then installs with no
-#' documentation for those methods, and `R CMD check` reports nothing,
+#' documentation for those methods, and \code{R CMD check} reports nothing,
 #' because it checks the tarball the files are no longer in. Green,
 #' and missing its docs.
 #'
-#' The `\\name{}` inside the file keeps the real topic, so help still
+#' The \code{\\name{}} inside the file keeps the real topic, so help still
 #' resolves under it; only the file on disk is renamed.
 #'
 #' @param name Topic name.
@@ -761,10 +797,7 @@ generate_rd_grouped <- function(topic, entries, all_tags,
     if (length(merged_params) > 0) {
         # Order: formals order (unique, preserving first occurrence), then any extras
         all_formal_names <- unique(all_formal_names)
-        param_order <- c(
-                         intersect(all_formal_names, names(merged_params)),
-                         setdiff(names(merged_params), all_formal_names)
-        )
+        param_order <- order_params(names(merged_params), all_formal_names)
         lines <- c(lines, "\\arguments{")
         for (i in seq_along(param_order)) {
             param <- param_order[i]
@@ -977,7 +1010,7 @@ generate_all_rd <- function(blocks, path = ".", cran_check = TRUE) {
                 block$type %in% c("function", "nn_module") &&
                 !is.null(block$formals)) {
                 formal_names <- block$formals$names
-                undoc <- setdiff(formal_names, names(tags$params))
+                undoc <- setdiff(formal_names, documented_params(tags$params))
                 undoc <- setdiff(undoc, "...")
                 if (length(undoc) > 0) {
                     warning("Undocumented parameters in ", tags$name, ": ",
@@ -1004,7 +1037,8 @@ generate_all_rd <- function(blocks, path = ".", cran_check = TRUE) {
                         etags <- resolve_inherit_params(etags, all_tags,
                             entry$block$formals)
                     }
-                    documented <- c(documented, names(etags$params))
+                    documented <- c(documented,
+                                    documented_params(etags$params))
                 }
                 documented <- unique(documented)
                 for (entry in entries) {
@@ -1151,7 +1185,7 @@ resolve_inherit_params <- function(tags, all_tags, formals) {
             }
 
             # Only inherit if not already documented
-            if (param_name %in% names(tags$params)) {
+            if (param_name %in% documented_params(tags$params)) {
                 next
             }
 
@@ -1166,7 +1200,7 @@ resolve_inherit_params <- function(tags, all_tags, formals) {
 #' Resolve Parameters from External Package Rd Files
 #'
 #' Reads an installed package's Rd file to extract parameter documentation
-#' for use with `@inheritParams pkg::function`.
+#' for use with \code{@inheritParams pkg::function}.
 #'
 #' @param source_name Character string like "base::cat" or "stats::lm".
 #' @return Named list of parameter descriptions, or empty list on failure.

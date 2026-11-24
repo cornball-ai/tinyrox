@@ -82,14 +82,46 @@ generate_namespace <- function(blocks) {
             if (!is.null(s3m$generic) && !is.null(s3m$class)) {
                 s3methods <- c(s3methods, list(list(generic = s3m$generic,
                             class = s3m$class)))
+            } else if (is.character(s3m$explicit) &&
+                grepl("::", s3m$explicit, fixed = TRUE)) {
+                # @exportS3Method pkg::generic: a method for a generic this
+                # package does not import. R registers it when pkg loads,
+                # so the directive must keep the pkg:: prefix. The class is
+                # the object name with "generic." removed.
+                prefix <- paste0(sub("^.*::", "", s3m$explicit), ".")
+                if (startsWith(block$object, prefix) &&
+                    nchar(block$object) > nchar(prefix)) {
+                    s3methods <- c(s3methods, list(list(
+                                generic = s3m$explicit,
+                                class = substring(block$object,
+                                    nchar(prefix) + 1L)
+                            )))
+                } else {
+                    warning("@exportS3Method ", s3m$explicit, " on ",
+                            block$object, " at ", basename(block$file), ":",
+                            block$line, ": the object name does not start ",
+                            "with \"", prefix, "\", so the class is ",
+                            "unknown; nothing was registered.", call. = FALSE)
+                }
             } else if (!is.null(s3m$explicit)) {
-                # Try to parse from function name: generic.class
+                # Infer from the function name. A known or package-defined
+                # generic wins (as.data.frame.foo); otherwise split at the
+                # first dot.
+                s3_info <- detect_s3_method(block$object, pkg_generics)
                 parts <- strsplit(block$object, "\\.")[[1]]
-                if (length(parts) >= 2) {
+                if (!is.null(s3_info)) {
+                    s3methods <- c(s3methods, list(s3_info))
+                } else if (length(parts) >= 2) {
                     s3methods <- c(s3methods, list(list(
                                 generic = parts[1],
                                 class = paste(parts[-1], collapse = ".")
                             )))
+                } else {
+                    warning("@exportS3Method on ", block$object, " at ",
+                            basename(block$file), ":", block$line,
+                            " names no generic and class, and the object ",
+                            "name has no dot to infer them from; nothing ",
+                            "was registered.", call. = FALSE)
                 }
             }
         }
@@ -149,13 +181,20 @@ generate_namespace <- function(blocks) {
         if (length(exports) > 0 || length(export_classes) > 0) {
             lines <- c(lines, "")
         }
+        # A block carrying both @export and @exportS3Method registers once
+        s3_keys <- vapply(s3methods, function(x) paste(x$generic, x$class),
+                          character(1))
+        s3methods <- s3methods[!duplicated(s3_keys)]
         s3methods <- s3methods[order(
                                      vapply(s3methods, function(x) paste(x$generic, x$class), character(1))
             )]
         for (s3m in s3methods) {
             gen <- s3m$generic
             cls <- s3m$class
-            if (!grepl("^[a-zA-Z._][a-zA-Z0-9._]*$", gen)) {
+            # pkg::generic stays bare: quoted, R would look for a generic
+            # literally named "pkg::generic"
+            if (!grepl("^([a-zA-Z][a-zA-Z0-9.]*::)?[a-zA-Z._][a-zA-Z0-9._]*$",
+                       gen)) {
                 gen <- paste0('"', gen, '"')
             }
             if (!grepl("^[a-zA-Z._][a-zA-Z0-9._]*$", cls)) {
