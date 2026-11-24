@@ -4,7 +4,7 @@
 \alias{SUPPORTED_DOC_TAGS}
 \title{Supported Documentation Tags}
 \format{
-An object of class \code{character} of length 22.
+An object of class \code{character} of length 23.
 }
 \usage{
 SUPPORTED_DOC_TAGS

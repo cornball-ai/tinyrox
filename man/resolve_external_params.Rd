@@ -13,6 +13,6 @@ Named list of parameter descriptions, or empty list on failure.
 }
 \description{
 Reads an installed package's Rd file to extract parameter documentation
-for use with `@inheritParams pkg::function`.
+for use with \code{@inheritParams pkg::function}.
 }
 \keyword{internal}

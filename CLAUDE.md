@@ -28,7 +28,7 @@ r -e 'tinyrox::document()'
 ## Supported Tags
 
 ### Documentation
-`@title`, `@description`, `@details`, `@param`, `@return`, `@value`, `@examples`, `@seealso`, `@references`, `@aliases`, `@keywords`, `@name`, `@rdname`, `@noRd`, `@inheritParams`
+`@title`, `@description`, `@details`, `@param`, `@return`, `@value`, `@examples`, `@examplesIf`, `@seealso`, `@references`, `@aliases`, `@keywords`, `@name`, `@rdname`, `@noRd`, `@inheritParams`
 
 ### Namespace
 `@export`, `@exportS3Method`, `@exportClass`, `@import`, `@importFrom`, `@useDynLib`

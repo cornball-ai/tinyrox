@@ -11,9 +11,9 @@ RD_NAME_SUBS
 }
 \description{
 Replacements applied to a topic name to make a file name, longest
-key first so `[<-` is read before `[`. This is the table roxygen2
-uses, so a package moving between the two does not churn its `man`
-directory, and the two names tinyrox already handled -- `\%||\%` and
+key first so \code{[<-} is read before \code{[}. This is the table roxygen2
+uses, so a package moving between the two does not churn its \code{man}
+directory, and the two names tinyrox already handled -- \code{\%||\%} and
 a leading dot -- come out exactly as they did.
 }
 \keyword{internal}

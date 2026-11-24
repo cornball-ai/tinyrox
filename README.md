@@ -36,10 +36,11 @@ check_cran()
 | `@title` | One-line title |
 | `@description` | Short description |
 | `@details` | Longer description |
-| `@param name` | Parameter documentation |
+| `@param name` | Parameter documentation (`@param a,b` covers both) |
 | `@return` | Return value |
 | `@value` | Alias for `@return` |
 | `@examples` | Code examples (verbatim) |
+| `@examplesIf cond` | Examples that run only when `cond` is true |
 | `@seealso` | Cross-references |
 | `@references` | Citations |
 | `@section Title:` | Custom section (package-level docs only) |
@@ -56,7 +57,7 @@ check_cran()
 | Tag | Effect |
 |-----|--------|
 | `@export` | `export()` |
-| `@exportS3Method generic class` | `S3method()` |
+| `@exportS3Method generic class` | `S3method()`; bare, generic and class come from the function name; `pkg::generic` registers for another package's generic |
 | `@import pkg` | `import()` |
 | `@importFrom pkg sym1 sym2` | `importFrom()` |
 | `@useDynLib pkg` | `useDynLib()` |
@@ -128,6 +129,9 @@ Issues detected:
 - `setwd()` without `on.exit()` restoration
 - Hardcoded `set.seed()` without parameter
 - Exported functions without examples; `\dontrun{}` overuse
+- Markdown that ships verbatim: backticked terms and `[fn()]` links. Write
+  `\code{x}` and `\code{\link{fn}}`, or silence the check with
+  `options(tinyrox.markdown_check = FALSE)`
 
 ## Philosophy
 
