@@ -1,6 +1,6 @@
 Package: tinyrox
 Title: Minimal R Documentation Generator
-Version: 0.4.1.5
+Version: 0.4.2
 Date: 2026-11-24
 Authors@R: c(
     person("Troy", "Hernandez", email = "troy@cornball.ai", role = c("aut", "cre"),

@@ -1,25 +1,15 @@
-# tinyrox 0.4.1.5
+# tinyrox 0.4.2
+
+Consolidates the 0.4.1.x development cycle: fixes for documentation and `NAMESPACE` entries that were dropped without an error, two false positives in the checks, and two additions (`@examplesIf` and dataset documentation).
 
 * `@exportS3Method pkg::generic` writes `S3method(pkg::generic,class)`, R's delayed registration for a generic the package does not import. It used to drop the `pkg::` prefix, and the two-argument form quoted it; either way the method was never registered. The class is the object name with `generic.` removed, and a name that does not start that way warns.
 * `@examplesIf cond` is supported (#39). It was an unknown tag, so its examples were skipped with a warning and the page shipped with none. The output matches roxygen2: the guard sits in `\dontshow{}` and the help page shows only the example code. Several example tags on one block now all reach the page, in the order written; a second `@examples` used to replace the first.
-
-# tinyrox 0.4.1.4
-
 * A bare `@exportS3Method` registers the method (#37). With no argument the tag was dropped silently: no `S3method()` line and no export, so dispatch failed at runtime. Generic and class now come from the object name, a known or package-defined generic first (`as.data.frame.foo`), and a name with no dot to split on warns.
 * `@param a,b desc` documents both formals for the undocumented-parameter check (#40). The Rd was already right (`\item{a,b}{...}`); the check compared the joined name against each formal and reported both as undocumented. A joined name also sorts at its earliest formal in `\arguments`.
 * The missing-examples check runs per Rd page (#41). A function merged into a page through `@rdname` is no longer reported when another block on the page carries the examples, and a bare `@export` above an S3 method, which generates no page, is skipped.
 * `check_cran()` warns when roxygen text contains markdown that ships verbatim (#42): backticked terms and `[fn()]` links, reported once per file. Example code, `@noRd` blocks, and text already inside `\code{}` are ignored. Nothing is converted. Silence it with `options(tinyrox.markdown_check = FALSE)`. The result list gains a `markdown` element.
-
-# tinyrox 0.4.1.3
-
 * A replacement S3 method (`$<-.myclass`, `[[<-.myclass`, `dim<-.myclass`) was given the usage `\method{$<-}{myclass}(x, name, value)`, which `R CMD check` reports as a bad `\usage` line: the `<-` sits on the generic, not at the end of the name, so the replacement test never fired. It is `\method{$}{myclass}(x, name) <- value` now, as for a plain replacement function. Found in glinty's two output-registration methods.
-
-# tinyrox 0.4.1.2
-
 * Datasets are documented. A block over a bare `"name"` line (the roxygen data convention) used to be dropped silently: no Rd, no warning, and `R CMD check` then reported the dataset undocumented. The directive now parses like the `"_PACKAGE"` sentinel, `@format` and `@source` are supported tags (an author's `@format` wins over the auto-introspected one), and data pages carry `\source{}`. Found standing up examen's `are` dataset.
-
-# tinyrox 0.4.1.1
-
 * Rd file names are portable for every topic, not just `%op%` and a leading dot. `$.foo`, `[[.foo` and `$<-.foo` are ordinary S3 methods, and the files named after them were being **dropped from the tarball**: `R CMD build` prints "excluding invalid files" and carries on, and the `R CMD check` that follows reads a tarball those files are no longer in, so nothing fails. glinty shipped four undocumented S3 methods that way with every CI job green.
 * The substitution table is roxygen2's, so a package moving between the two tools does not churn its `man` directory, and the two cases tinyrox already handled (`%||%`, a leading dot) come out spelled exactly as before. `document()` now refuses outright if a name it wrote would still be dropped.
 
