@@ -25,6 +25,7 @@ list returned by `check_cran()` gains a `markdown` element.
 * local: Ubuntu 24.04, R 4.6.1 (`--as-cran --run-donttest`, with the PDF
   manual)
 * GitHub Actions: ubuntu-latest, macos-latest
+* win-builder: R-devel (2026-11-17 r90926 ucrt), Status: OK
 
 ## R CMD check results
 
